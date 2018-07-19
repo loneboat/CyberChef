@@ -31,18 +31,19 @@ const Hexdump = {
     /**
      * To Hexdump operation.
      *
-     * @param {byteArray} input
+     * @param {ArrayBuffer} input
      * @param {Object[]} args
      * @returns {string}
      */
     runTo: function(input, args) {
+        const data = new Uint8Array(input);
         const length = args[0] || Hexdump.WIDTH;
         const upperCase = args[1];
         const includeFinalLength = args[2];
 
         let output = "", padding = 2;
-        for (let i = 0; i < input.length; i += length) {
-            const buff = input.slice(i, i+length);
+        for (let i = 0; i < data.length; i += length) {
+            const buff = data.slice(i, i+length);
             let hexa = "";
             for (let j = 0; j < buff.length; j++) {
                 hexa += Utils.hex(buff[j], padding) + " ";
@@ -56,10 +57,10 @@ const Hexdump = {
             }
 
             output += lineNo + "  " +
-                Utils.padRight(hexa, (length*(padding+1))) +
-                " |" + Utils.padRight(Utils.printable(Utils.byteArrayToChars(buff)), buff.length) + "|\n";
+                hexa.padEnd(length*(padding+1), " ") +
+                " |" + Utils.printable(Utils.byteArrayToChars(buff)).padEnd(buff.length, " ") + "|\n";
 
-            if (includeFinalLength && i+buff.length === input.length) {
+            if (includeFinalLength && i+buff.length === data.length) {
                 output += Utils.hex(i+buff.length, 8) + "\n";
             }
         }
@@ -77,7 +78,7 @@ const Hexdump = {
      */
     runFrom: function(input, args) {
         let output = [],
-            regex = /^\s*(?:[\dA-F]{4,16}:?)?\s*((?:[\dA-F]{2}\s){1,8}(?:\s|[\dA-F]{2}-)(?:[\dA-F]{2}\s){1,8}|(?:[\dA-F]{2}\s|[\dA-F]{4}\s)+)/igm,
+            regex = /^\s*(?:[\dA-F]{4,16}h?:?)?\s*((?:[\dA-F]{2}\s){1,8}(?:\s|[\dA-F]{2}-)(?:[\dA-F]{2}\s){1,8}|(?:[\dA-F]{2}\s|[\dA-F]{4}\s)+)/igm,
             block, line;
 
         while ((block = regex.exec(input))) {

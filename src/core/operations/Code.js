@@ -1,11 +1,10 @@
 import {camelCase, kebabCase, snakeCase} from "lodash";
-
-import Utils from "../Utils.js";
 import vkbeautify from "vkbeautify";
-import {DOMParser as dom} from "xmldom";
+import {DOMParser} from "xmldom";
 import xpath from "xpath";
 import jpath from "jsonpath";
-import prettyPrintOne from "imports-loader?window=>global!exports-loader?prettyPrintOne!google-code-prettify/bin/prettify.min.js";
+import nwmatcher from "nwmatcher";
+import hljs from "highlight.js";
 
 
 /**
@@ -23,12 +22,7 @@ const Code = {
      * @constant
      * @default
      */
-    LANGUAGES: ["default-code", "default-markup", "bash", "bsh", "c", "cc", "coffee", "cpp", "cs", "csh", "cv", "cxx", "cyc", "htm", "html", "in.tag", "java", "javascript", "js", "json", "m", "mxml", "perl", "pl", "pm", "py", "python", "rb", "rc", "rs", "ruby", "rust", "sh", "uq.val", "xhtml", "xml", "xsl"],
-    /**
-     * @constant
-     * @default
-     */
-    LINE_NUMS: false,
+    LANGUAGES: ["auto detect"].concat(hljs.listLanguages()),
 
     /**
      * Syntax highlighter operation.
@@ -38,9 +32,13 @@ const Code = {
      * @returns {html}
      */
     runSyntaxHighlight: function(input, args) {
-        let language = args[0],
-            lineNums = args[1];
-        return "<code class='prettyprint'>" + prettyPrintOne(Utils.escapeHtml(input), language, lineNums) + "</code>";
+        const language = args[0];
+
+        if (language === "auto detect") {
+            return hljs.highlightAuto(input).value;
+        }
+
+        return hljs.highlight(language, input, true).value;
     },
 
 
@@ -336,7 +334,7 @@ const Code = {
 
         let doc;
         try {
-            doc = new dom().parseFromString(input);
+            doc = new DOMParser().parseFromString(input, "application/xml");
         } catch (err) {
             return "Invalid input XML.";
         }
@@ -423,7 +421,7 @@ const Code = {
         let query = args[0],
             delimiter = args[1],
             parser = new DOMParser(),
-            html,
+            dom,
             result;
 
         if (!query.length || !input.length) {
@@ -431,32 +429,32 @@ const Code = {
         }
 
         try {
-            html = parser.parseFromString(input, "text/html");
+            dom = parser.parseFromString(input);
         } catch (err) {
             return "Invalid input HTML.";
         }
 
         try {
-            result = html.querySelectorAll(query);
+            const matcher = nwmatcher({document: dom});
+            result = matcher.select(query, dom);
         } catch (err) {
             return "Invalid CSS Selector. Details:\n" + err.message;
         }
 
         const nodeToString = function(node) {
+            return node.toString();
+            /* xmldom does not return the outerHTML value.
             switch (node.nodeType) {
-                case Node.ELEMENT_NODE: return node.outerHTML;
-                case Node.ATTRIBUTE_NODE: return node.value;
-                case Node.COMMENT_NODE: return node.data;
-                case Node.TEXT_NODE: return node.wholeText;
-                case Node.DOCUMENT_NODE: return node.outerHTML;
+                case node.ELEMENT_NODE: return node.outerHTML;
+                case node.ATTRIBUTE_NODE: return node.value;
+                case node.TEXT_NODE: return node.wholeText;
+                case node.COMMENT_NODE: return node.data;
+                case node.DOCUMENT_NODE: return node.outerHTML;
                 default: throw new Error("Unknown Node Type: " + node.nodeType);
-            }
+            }*/
         };
 
-        return Array.apply(null, Array(result.length))
-            .map(function(_, i) {
-                return result[i];
-            })
+        return result
             .map(nodeToString)
             .join(delimiter);
     },
@@ -485,12 +483,11 @@ const Code = {
 
 
     /**
-     * Converts to snake_case.
+     * To Snake Case operation.
      *
      * @param {string} input
      * @param {Object[]} args
      * @returns {string}
-     *
      */
     runToSnakeCase(input, args) {
         const smart = args[0];
@@ -504,12 +501,11 @@ const Code = {
 
 
     /**
-     * Converts to camelCase.
+     * To Camel Case operation.
      *
      * @param {string} input
      * @param {Object[]} args
      * @returns {string}
-     *
      */
     runToCamelCase(input, args) {
         const smart = args[0];
@@ -523,12 +519,11 @@ const Code = {
 
 
     /**
-     * Converts to kebab-case.
+     * To Kebab Case operation.
      *
      * @param {string} input
      * @param {Object[]} args
      * @returns {string}
-     *
      */
     runToKebabCase(input, args) {
         const smart = args[0];
@@ -539,6 +534,7 @@ const Code = {
             return kebabCase(input);
         }
     },
+
 };
 
 export default Code;

@@ -35,7 +35,7 @@ module.exports = {
         new webpack.ProvidePlugin({
             $: "jquery",
             jQuery: "jquery",
-            moment: "moment-timezone"
+            log: "loglevel"
         }),
         new webpack.BannerPlugin({
             banner: banner,
@@ -53,7 +53,7 @@ module.exports = {
         rules: [
             {
                 test: /\.js$/,
-                exclude: /node_modules/,
+                exclude: /node_modules\/(?!jsesc)/,
                 loader: "babel-loader?compact=false"
             },
             {
@@ -108,9 +108,13 @@ module.exports = {
         children: false,
         chunks: false,
         modules: false,
-        warningsFilter: /source-map/,
+        entrypoints: false,
+        warningsFilter: [/source-map/, /dependency is an expression/],
     },
     node: {
         fs: "empty"
+    },
+    performance: {
+        hints: false
     }
 };

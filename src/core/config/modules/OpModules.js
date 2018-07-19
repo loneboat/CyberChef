@@ -7,6 +7,7 @@
  */
 
 import OpModules from "./Default.js";
+import BSONModule from "./BSON.js";
 import CharEncModule from "./CharEnc.js";
 import CipherModule from "./Ciphers.js";
 import CodeModule from "./Code.js";
@@ -18,11 +19,13 @@ import HTTPModule from "./HTTP.js";
 import ImageModule from "./Image.js";
 import JSBNModule from "./JSBN.js";
 import PublicKeyModule from "./PublicKey.js";
+import RegexModule from "./Regex.js";
 import ShellcodeModule from "./Shellcode.js";
 import URLModule from "./URL.js";
 
 Object.assign(
     OpModules,
+    BSONModule,
     CharEncModule,
     CipherModule,
     CodeModule,
@@ -34,6 +37,7 @@ Object.assign(
     ImageModule,
     JSBNModule,
     PublicKeyModule,
+    RegexModule,
     ShellcodeModule,
     URLModule
 );

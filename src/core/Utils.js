@@ -1,4 +1,5 @@
-import CryptoJS from "crypto-js";
+import utf8 from "utf8";
+import moment from "moment-timezone";
 
 
 /**
@@ -65,58 +66,6 @@ const Utils = {
 
 
     /**
-     * Adds leading zeros to strings
-     *
-     * @param {string} str - String to add leading characters to.
-     * @param {number} max - Maximum width of the string.
-     * @param {char} [chr='0'] - The character to pad with.
-     * @returns {string}
-     *
-     * @example
-     * // returns "0a"
-     * Utils.padLeft("a", 2);
-     *
-     * // returns "000a"
-     * Utils.padLeft("a", 4);
-     *
-     * // returns "xxxa"
-     * Utils.padLeft("a", 4, "x");
-     *
-     * // returns "bcabchello"
-     * Utils.padLeft("hello", 10, "abc");
-     */
-    padLeft: function(str, max, chr) {
-        chr = chr || "0";
-        let startIndex = chr.length - (max - str.length);
-        startIndex = startIndex < 0 ? 0 : startIndex;
-        return str.length < max ?
-            Utils.padLeft(chr.slice(startIndex, chr.length) + str, max, chr) : str;
-    },
-
-
-    /**
-     * Adds trailing spaces to strings.
-     *
-     * @param {string} str - String to add trailing characters to.
-     * @param {number} max - Maximum width of the string.
-     * @param {char} [chr='0'] - The character to pad with.
-     * @returns {string}
-     *
-     * @example
-     * // returns "a   "
-     * Utils.padRight("a", 4);
-     *
-     * // returns "axxx"
-     * Utils.padRight("a", 4, "x");
-     */
-    padRight: function(str, max, chr) {
-        chr = chr || " ";
-        return str.length < max ?
-            Utils.padRight(str + chr.slice(0, max-str.length), max, chr) : str;
-    },
-
-
-    /**
      * Adds trailing bytes to a byteArray.
      *
      * @author tlwr [toby@toby.codes]
@@ -149,14 +98,6 @@ const Utils = {
         });
 
         return paddedBytes;
-    },
-
-
-    /**
-     * @alias Utils.padLeft
-     */
-    pad: function(str, max, chr) {
-        return Utils.padLeft(str, max, chr);
     },
 
 
@@ -201,7 +142,7 @@ const Utils = {
     hex: function(c, length) {
         c = typeof c == "string" ? Utils.ord(c) : c;
         length = length || 2;
-        return Utils.pad(c.toString(16), length);
+        return c.toString(16).padStart(length, "0");
     },
 
 
@@ -222,7 +163,7 @@ const Utils = {
     bin: function(c, length) {
         c = typeof c == "string" ? Utils.ord(c) : c;
         length = length || 8;
-        return Utils.pad(c.toString(2), length);
+        return c.toString(2).padStart(length, "0");
     },
 
 
@@ -261,21 +202,34 @@ const Utils = {
      * Utils.parseEscapedChars("\\n");
      */
     parseEscapedChars: function(str) {
-        return str.replace(/(\\)?\\([nrtbf]|x[\da-f]{2})/g, function(m, a, b) {
+        return str.replace(/(\\)?\\([bfnrtv0'"]|x[\da-fA-F]{2}|u[\da-fA-F]{4}|u\{[\da-fA-F]{1,6}\})/g, function(m, a, b) {
             if (a === "\\") return "\\"+b;
             switch (b[0]) {
-                case "n":
-                    return "\n";
-                case "r":
-                    return "\r";
-                case "t":
-                    return "\t";
+                case "0":
+                    return "\0";
                 case "b":
                     return "\b";
+                case "t":
+                    return "\t";
+                case "n":
+                    return "\n";
+                case "v":
+                    return "\v";
                 case "f":
                     return "\f";
+                case "r":
+                    return "\r";
+                case '"':
+                    return '"';
+                case "'":
+                    return "'";
                 case "x":
-                    return Utils.chr(parseInt(b.substr(1), 16));
+                    return String.fromCharCode(parseInt(b.substr(1), 16));
+                case "u":
+                    if (b[1] === "{")
+                        return String.fromCodePoint(parseInt(b.slice(2, -1), 16));
+                    else
+                        return String.fromCharCode(parseInt(b.substr(1), 16));
             }
         });
     },
@@ -341,6 +295,72 @@ const Utils = {
 
 
     /**
+     * Coverts data of varying types to a byteArray.
+     * Accepts hex, Base64, UTF8 and Latin1 strings.
+     *
+     * @param {string} str
+     * @param {string} type - One of "Hex", "Base64", "UTF8" or "Latin1"
+     * @returns {byteArray}
+     *
+     * @example
+     * // returns [208, 159, 209, 128, 208, 184, 208, 178, 208, 181, 209, 130]
+     * Utils.convertToByteArray("Привет", "utf8");
+     *
+     * // returns [208, 159, 209, 128, 208, 184, 208, 178, 208, 181, 209, 130]
+     * Utils.convertToByteArray("d097d0b4d180d0b0d0b2d181d182d0b2d183d0b9d182d0b5", "hex");
+     *
+     * // returns [208, 159, 209, 128, 208, 184, 208, 178, 208, 181, 209, 130]
+     * Utils.convertToByteArray("0JfQtNGA0LDQstGB0YLQstGD0LnRgtC1", "base64");
+     */
+    convertToByteArray: function(str, type) {
+        switch (type.toLowerCase()) {
+            case "hex":
+                return Utils.fromHex(str);
+            case "base64":
+                return Utils.fromBase64(str, null, "byteArray");
+            case "utf8":
+                return Utils.strToUtf8ByteArray(str);
+            case "latin1":
+            default:
+                return Utils.strToByteArray(str);
+        }
+    },
+
+
+    /**
+     * Coverts data of varying types to a byte string.
+     * Accepts hex, Base64, UTF8 and Latin1 strings.
+     *
+     * @param {string} str
+     * @param {string} type - One of "Hex", "Base64", "UTF8" or "Latin1"
+     * @returns {string}
+     *
+     * @example
+     * // returns "ÐÑÐ¸Ð²ÐµÑ"
+     * Utils.convertToByteString("Привет", "utf8");
+     *
+     * // returns "ÐÐ´ÑÐ°Ð²ÑÑÐ²ÑÐ¹ÑÐµ"
+     * Utils.convertToByteString("d097d0b4d180d0b0d0b2d181d182d0b2d183d0b9d182d0b5", "hex");
+     *
+     * // returns "ÐÐ´ÑÐ°Ð²ÑÑÐ²ÑÐ¹ÑÐµ"
+     * Utils.convertToByteString("0JfQtNGA0LDQstGB0YLQstGD0LnRgtC1", "base64");
+     */
+    convertToByteString: function(str, type) {
+        switch (type.toLowerCase()) {
+            case "hex":
+                return Utils.byteArrayToChars(Utils.fromHex(str));
+            case "base64":
+                return Utils.byteArrayToChars(Utils.fromBase64(str, null, "byteArray"));
+            case "utf8":
+                return utf8.encode(str);
+            case "latin1":
+            default:
+                return str;
+        }
+    },
+
+
+    /**
      * Converts a string to a byte array.
      * Treats the string as UTF-8 if any values are over 255.
      *
@@ -381,17 +401,17 @@ const Utils = {
      * Utils.strToUtf8ByteArray("你好");
      */
     strToUtf8ByteArray: function(str) {
-        let wordArray = CryptoJS.enc.Utf8.parse(str),
-            byteArray = Utils.wordArrayToByteArray(wordArray);
+        const utf8Str = utf8.encode(str);
 
-        if (str.length !== wordArray.sigBytes) {
+        if (str.length !== utf8Str.length) {
             if (ENVIRONMENT_IS_WORKER()) {
                 self.setOption("attemptHighlight", false);
             } else if (ENVIRONMENT_IS_WEB()) {
                 window.app.options.attemptHighlight = false;
             }
         }
-        return byteArray;
+
+        return Utils.strToByteArray(utf8Str);
     },
 
 
@@ -443,26 +463,21 @@ const Utils = {
      * Utils.byteArrayToUtf8([228,189,160,229,165,189]);
      */
     byteArrayToUtf8: function(byteArray) {
+        const str = Utils.byteArrayToChars(byteArray);
         try {
-            // Try to output data as UTF-8 string
-            const words = [];
-            for (let i = 0; i < byteArray.length; i++) {
-                words[i >>> 2] |= byteArray[i] << (24 - (i % 4) * 8);
-            }
-            let wordArray = new CryptoJS.lib.WordArray.init(words, byteArray.length),
-                str = CryptoJS.enc.Utf8.stringify(wordArray);
+            const utf8Str = utf8.decode(str);
 
-            if (str.length !== wordArray.sigBytes) {
+            if (str.length !== utf8Str.length) {
                 if (ENVIRONMENT_IS_WORKER()) {
                     self.setOption("attemptHighlight", false);
                 } else if (ENVIRONMENT_IS_WEB()) {
                     window.app.options.attemptHighlight = false;
                 }
             }
-            return str;
+            return utf8Str;
         } catch (err) {
             // If it fails, treat it as ANSI
-            return Utils.byteArrayToChars(byteArray);
+            return str;
         }
     },
 
@@ -470,7 +485,7 @@ const Utils = {
     /**
      * Converts a charcode array to a string.
      *
-     * @param {byteArray} byteArray
+     * @param {byteArray|Uint8Array} byteArray
      * @returns {string}
      *
      * @example
@@ -491,33 +506,26 @@ const Utils = {
 
 
     /**
-     * Converts a CryptoJS.lib.WordArray to a byteArray.
+     * Converts an ArrayBuffer to a string.
      *
-     * @param {CryptoJS.lib.WordArray} wordArray
-     * @returns {byteArray}
+     * @param {ArrayBuffer} arrayBuffer
+     * @param {boolean} [utf8=true] - Whether to attempt to decode the buffer as UTF-8
+     * @returns {string}
      *
      * @example
-     * // returns [84, 101, 115, 116]
-     * Utils.wordArrayToByteArray(CryptoJS.enc.Hex.parse("54657374"));
+     * // returns "hello"
+     * Utils.arrayBufferToStr(Uint8Array.from([104,101,108,108,111]).buffer);
      */
-    wordArrayToByteArray: function(wordArray) {
-        if (wordArray.sigBytes <= 0) return [];
-
-        let words = wordArray.words,
-            byteArray = [];
-
-        for (let i = 0; i < wordArray.sigBytes; i++) {
-            byteArray.push((words[i >>> 2] >>> (24 - (i % 4) * 8)) & 0xff);
-        }
-
-        return byteArray;
+    arrayBufferToStr: function(arrayBuffer, utf8=true) {
+        const byteArray = Array.prototype.slice.call(new Uint8Array(arrayBuffer));
+        return utf8 ? Utils.byteArrayToUtf8(byteArray) : Utils.byteArrayToChars(byteArray);
     },
 
 
     /**
      * Base64's the input byte array using the given alphabet, returning a string.
      *
-     * @param {byteArray|string} data
+     * @param {byteArray|Uint8Array|string} data
      * @param {string} [alphabet]
      * @returns {string}
      *
@@ -636,7 +644,7 @@ const Utils = {
     /**
      * Convert a byte array into a hex string.
      *
-     * @param {byteArray} data
+     * @param {Uint8Array|byteArray} data
      * @param {string} [delim=" "]
      * @param {number} [padding=2]
      * @returns {string}
@@ -656,7 +664,7 @@ const Utils = {
         let output = "";
 
         for (let i = 0; i < data.length; i++) {
-            output += Utils.pad(data[i].toString(16), padding) + delim;
+            output += data[i].toString(16).padStart(padding, "0") + delim;
         }
 
         // Add \x or 0x to beginning
@@ -710,10 +718,10 @@ const Utils = {
      * Utils.fromHex("0a:14:1e", "Colon");
      */
     fromHex: function(data, delim, byteLen) {
-        delim = delim || (data.indexOf(" ") >= 0 ? "Space" : "None");
+        delim = delim || "Auto";
         byteLen = byteLen || 2;
         if (delim !== "None") {
-            const delimRegex = Utils.regexRep[delim];
+            const delimRegex = delim === "Auto" ? /[^a-f\d]/gi : Utils.regexRep[delim];
             data = data.replace(delimRegex, "");
         }
 
@@ -729,37 +737,43 @@ const Utils = {
      * Parses CSV data and returns it as a two dimensional array or strings.
      *
      * @param {string} data
+     * @param {string[]} [cellDelims=[","]]
+     * @param {string[]} [lineDelims=["\n", "\r"]]
      * @returns {string[][]}
      *
      * @example
      * // returns [["head1", "head2"], ["data1", "data2"]]
      * Utils.parseCSV("head1,head2\ndata1,data2");
      */
-    parseCSV: function(data) {
-
+    parseCSV: function(data, cellDelims=[","], lineDelims=["\n", "\r"]) {
         let b,
-            ignoreNext = false,
+            next,
+            renderNext = false,
             inString = false,
             cell = "",
             line = [],
             lines = [];
 
+        // Remove BOM, often present in Excel CSV files
+        if (data.length && data[0] === "\uFEFF") data = data.substr(1);
+
         for (let i = 0; i < data.length; i++) {
             b = data[i];
-            if (ignoreNext) {
+            next = data[i+1] || "";
+            if (renderNext) {
                 cell += b;
-                ignoreNext = false;
+                renderNext = false;
             } else if (b === "\\") {
-                cell += b;
-                ignoreNext = true;
+                renderNext = true;
             } else if (b === "\"" && !inString) {
                 inString = true;
             } else if (b === "\"" && inString) {
-                inString = false;
-            } else if (b === "," && !inString) {
+                if (next === "\"") renderNext = true;
+                else inString = false;
+            } else if (!inString && cellDelims.indexOf(b) >= 0) {
                 line.push(cell);
                 cell = "";
-            } else if ((b === "\n" || b === "\r") && !inString) {
+            } else if (!inString && lineDelims.indexOf(b) >= 0) {
                 line.push(cell);
                 cell = "";
                 lines.push(line);
@@ -859,7 +873,7 @@ const Utils = {
      *
      * fragment      = *( pchar / "/" / "?" )
      * query         = *( pchar / "/" / "?" )
-     * pchar         = unreserved / pct-encoded / sub-delims / ":" / "@" 
+     * pchar         = unreserved / pct-encoded / sub-delims / ":" / "@"
      * unreserved    = ALPHA / DIGIT / "-" / "." / "_" / "~"
      * pct-encoded   = "%" HEXDIG HEXDIG
      * sub-delims    = "!" / "$" / "&" / "'" / "(" / ")"
@@ -910,9 +924,9 @@ const Utils = {
      * "Pretty" CyberChef recipe formats are designed to be included in the fragment (#) or query (?)
      * parts of the URL. They can also be loaded into CyberChef through the 'Load' interface. In order
      * to make this format as readable as possible, various special characters are used unescaped. This
-     * reduces the amount of percent-encoding included in the URL which is typically difficult to read,
-     * as well as substantially increasing the overall length. These characteristics can be quite
-     * offputting for users.
+     * reduces the amount of percent-encoding included in the URL which is typically difficult to read
+     * and substantially increases the overall length. These characteristics can be quite off-putting
+     * for users.
      *
      * @param {Object[]} recipeConfig
      * @param {boolean} newline - whether to add a newline after each operation
@@ -929,12 +943,11 @@ const Utils = {
             name = op.op.replace(/ /g, "_");
             args = JSON.stringify(op.args)
                 .slice(1, -1) // Remove [ and ] as they are implied
-                // We now need to switch double-quoted (") strings to single-quotes (') as these do not
-                // need to be percent-encoded.
+                // We now need to switch double-quoted (") strings to single quotes (') as single quotes
+                // do not need to be percent-encoded.
                 .replace(/'/g, "\\'") // Escape single quotes
-                .replace(/\\"/g, '"') // Unescape double quotes
-                .replace(/(^|,|{|:)"/g, "$1'") // Replace opening " with '
-                .replace(/"(,|:|}|$)/g, "'$1"); // Replace closing " with '
+                .replace(/"((?:[^"\\]|\\.)*)"/g, "'$1'") // Replace opening and closing " with '
+                .replace(/\\"/g, '"'); // Unescape double quotes
 
             disabled = op.disabled ? "/disabled": "";
             bp = op.breakpoint ? "/breakpoint" : "";
@@ -960,7 +973,7 @@ const Utils = {
         // Parse bespoke recipe format
         recipe = recipe.replace(/\n/g, "");
         let m,
-            recipeRegex = /([^(]+)\(((?:'[^'\\]*(?:\\.[^'\\]*)*'|[^)/])*)(\/[^)]+)?\)/g,
+            recipeRegex = /([^(]+)\(((?:'[^'\\]*(?:\\.[^'\\]*)*'|[^)/'])*)(\/[^)]+)?\)/g,
             recipeConfig = [],
             args;
 
@@ -1248,21 +1261,6 @@ const Utils = {
         "None":          /\s+/g // Included here to remove whitespace when there shouldn't be any
     },
 
-
-    /**
-     * A mapping of string formats to their classes in the CryptoJS library.
-     * @constant
-     */
-    format: {
-        "Hex":     CryptoJS.enc.Hex,
-        "Base64":  CryptoJS.enc.Base64,
-        "UTF8":    CryptoJS.enc.Utf8,
-        "UTF16":   CryptoJS.enc.Utf16,
-        "UTF16LE": CryptoJS.enc.Utf16LE,
-        "UTF16BE": CryptoJS.enc.Utf16BE,
-        "Latin1":  CryptoJS.enc.Latin1,
-    },
-
 };
 
 export default Utils;
@@ -1376,29 +1374,43 @@ String.prototype.count = function(chr) {
 };
 
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
-// Library overrides ///////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-/**
- * Override for the CryptoJS Hex encoding parser to remove whitespace before attempting to parse
- * the hex string.
- *
- * @param {string} hexStr
- * @returns {CryptoJS.lib.WordArray}
+/*
+ * Polyfills
  */
-CryptoJS.enc.Hex.parse = function (hexStr) {
-    // Remove whitespace
-    hexStr = hexStr.replace(/\s/g, "");
 
-    // Shortcut
-    const hexStrLength = hexStr.length;
+// https://github.com/uxitten/polyfill/blob/master/string.polyfill.js
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/padStart
+if (!String.prototype.padStart) {
+    String.prototype.padStart = function padStart(targetLength, padString) {
+        targetLength = targetLength>>0; //floor if number or convert non-number to 0;
+        padString = String((typeof padString !== "undefined" ? padString : " "));
+        if (this.length > targetLength) {
+            return String(this);
+        } else {
+            targetLength = targetLength-this.length;
+            if (targetLength > padString.length) {
+                padString += padString.repeat(targetLength/padString.length); //append to original to ensure we are longer than needed
+            }
+            return padString.slice(0, targetLength) + String(this);
+        }
+    };
+}
 
-    // Convert
-    const words = [];
-    for (let i = 0; i < hexStrLength; i += 2) {
-        words[i >>> 3] |= parseInt(hexStr.substr(i, 2), 16) << (24 - (i % 8) * 4);
-    }
 
-    return new CryptoJS.lib.WordArray.init(words, hexStrLength / 2);
-};
+// https://github.com/uxitten/polyfill/blob/master/string.polyfill.js
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/padEnd
+if (!String.prototype.padEnd) {
+    String.prototype.padEnd = function padEnd(targetLength, padString) {
+        targetLength = targetLength>>0; //floor if number or convert non-number to 0;
+        padString = String((typeof padString !== "undefined" ? padString : " "));
+        if (this.length > targetLength) {
+            return String(this);
+        } else {
+            targetLength = targetLength-this.length;
+            if (targetLength > padString.length) {
+                padString += padString.repeat(targetLength/padString.length); //append to original to ensure we are longer than needed
+            }
+            return String(this) + padString.slice(0, targetLength);
+        }
+    };
+}

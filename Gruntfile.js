@@ -131,7 +131,7 @@ module.exports = function (grunt) {
 
     grunt.initConfig({
         clean: {
-            dev: ["build/dev/*", "src/core/config/MetaConfig.js"],
+            dev: ["build/dev/*"],
             prod: ["build/prod/*", "src/core/config/MetaConfig.js"],
             test: ["build/test/*", "src/core/config/MetaConfig.js"],
             node: ["build/node/*", "src/core/config/MetaConfig.js"],
@@ -185,8 +185,12 @@ module.exports = function (grunt) {
         webpack: {
             options: webpackConfig,
             metaConf: {
+                mode: "production",
                 target: "node",
-                entry: "./src/core/config/OperationConfig.js",
+                entry: [
+                    "babel-polyfill",
+                    "./src/core/config/OperationConfig.js"
+                ],
                 output: {
                     filename: "MetaConfig.js",
                     path: __dirname + "/src/core/config/",
@@ -197,8 +201,12 @@ module.exports = function (grunt) {
                 externals: [NodeExternals()],
             },
             metaConfDev: {
+                mode: "development",
                 target: "node",
-                entry: "./src/core/config/OperationConfig.js",
+                entry: [
+                    "babel-polyfill",
+                    "./src/core/config/OperationConfig.js"
+                ],
                 output: {
                     filename: "MetaConfig.js",
                     path: __dirname + "/src/core/config/",
@@ -210,9 +218,11 @@ module.exports = function (grunt) {
                 watch: true
             },
             web: {
+                mode: "production",
                 target: "web",
                 entry: Object.assign({
-                    main: "./src/web/index.js"
+                    main: "./src/web/index.js",
+                    sitemap: "./src/web/static/sitemap.js"
                 }, moduleEntryPoints),
                 output: {
                     path: __dirname + "/build/prod"
@@ -224,15 +234,6 @@ module.exports = function (grunt) {
                 },
                 plugins: [
                     new webpack.DefinePlugin(BUILD_CONSTANTS),
-                    new webpack.optimize.UglifyJsPlugin({
-                        compress: {
-                            "screw_ie8": true,
-                            "dead_code": true,
-                            "unused": true,
-                            "warnings": false
-                        },
-                        comments: false,
-                    }),
                     new HtmlWebpackPlugin({
                         filename: "index.html",
                         template: "./src/web/html/index.html",
@@ -249,6 +250,7 @@ module.exports = function (grunt) {
                 ]
             },
             webInline: {
+                mode: "production",
                 target: "web",
                 entry: "./src/web/index.js",
                 output: {
@@ -256,21 +258,14 @@ module.exports = function (grunt) {
                     path: __dirname + "/build/prod"
                 },
                 plugins: [
-                    new webpack.DefinePlugin(BUILD_CONSTANTS),
-                    new webpack.optimize.UglifyJsPlugin({
-                        compress: {
-                            "screw_ie8": true,
-                            "dead_code": true,
-                            "unused": true,
-                            "warnings": false
-                        },
-                        comments: false,
-                    }),
+                    new webpack.DefinePlugin(Object.assign({}, BUILD_CONSTANTS, {
+                        INLINE: "true"
+                    })),
                     new HtmlWebpackPlugin({
                         filename: "cyberchef.htm",
                         template: "./src/web/html/index.html",
                         compileTime: compileTime,
-                        version: pkg.version,
+                        version: pkg.version + "s",
                         inline: true,
                         minify: {
                             removeComments: true,
@@ -282,6 +277,7 @@ module.exports = function (grunt) {
                 ]
             },
             tests: {
+                mode: "development",
                 target: "node",
                 entry: "./test/index.js",
                 externals: [NodeExternals()],
@@ -294,6 +290,7 @@ module.exports = function (grunt) {
                 ]
             },
             node: {
+                mode: "production",
                 target: "node",
                 entry: "./src/node/index.js",
                 externals: [NodeExternals()],
@@ -320,11 +317,13 @@ module.exports = function (grunt) {
                     children: false,
                     chunks: false,
                     modules: false,
-                    warningsFilter: /source-map/,
+                    entrypoints: false,
+                    warningsFilter: [/source-map/, /dependency is an expression/],
                 }
             },
             start: {
                 webpack: {
+                    mode: "development",
                     target: "web",
                     entry: Object.assign({
                         main: "./src/web/index.js"
@@ -371,7 +370,7 @@ module.exports = function (grunt) {
                         expand: true,
                         src: "docs/**",
                         dest: "build/prod/"
-                    }
+                    },
                 ]
             }
         },
@@ -400,6 +399,9 @@ module.exports = function (grunt) {
             cleanGit: {
                 command: "git gc --prune=now --aggressive"
             },
+            sitemap: {
+                command: "node build/prod/sitemap.js > build/prod/sitemap.xml"
+            }
         },
         execute: {
             test: "build/test/index.js"

@@ -49,9 +49,11 @@ App.prototype.setup = function() {
     this.manager.setup();
     this.resetLayout();
     this.setCompileMessage();
-    this.loadURIParams();
 
+    log.debug("App loaded");
     this.appLoaded = true;
+
+    this.loadURIParams();
     this.loaded();
 };
 
@@ -80,6 +82,9 @@ App.prototype.loaded = function() {
     // Clear the loading message interval
     clearInterval(window.loadingMsgsInt);
 
+    // Remove the loading error handler
+    window.removeEventListener("error", window.loadingErrorHandler);
+
     document.dispatchEvent(this.manager.apploaded);
 };
 
@@ -91,7 +96,7 @@ App.prototype.loaded = function() {
  * @param {boolean} [logToConsole=false]
  */
 App.prototype.handleError = function(err, logToConsole) {
-    if (logToConsole) console.error(err);
+    if (logToConsole) log.error(err);
     const msg = err.displayStr || err.toString();
     this.alert(msg, "danger", this.options.errorTimeout, !this.options.showErrors);
 };
@@ -129,6 +134,7 @@ App.prototype.autoBake = function() {
     if (this.autoBakePause) return false;
 
     if (this.autoBake_ && !this.baking) {
+        log.debug("Auto-baking");
         this.bake();
     } else {
         this.manager.controls.showStaleIndicator();
@@ -374,6 +380,7 @@ App.prototype.loadURIParams = function() {
         window.location.href.split("#")[1] ||
         window.location.hash;
     this.uriParams = Utils.parseURIParams(params);
+    this.autoBakePause = true;
 
     // Read in recipe from URI params
     if (this.uriParams.recipe) {
@@ -384,35 +391,29 @@ App.prototype.loadURIParams = function() {
     } else if (this.uriParams.op) {
         // If there's no recipe, look for single operations
         this.manager.recipe.clearRecipe();
-        try {
-            this.manager.recipe.addOperation(this.uriParams.op);
-        } catch (err) {
-            // If no exact match, search for nearest match and add that
-            const matchedOps = this.manager.ops.filterOperations(this.uriParams.op, false);
-            if (matchedOps.length) {
-                this.manager.recipe.addOperation(matchedOps[0].name);
-            }
 
-            // Populate search with the string
-            const search = document.getElementById("search");
-
-            search.value = this.uriParams.op;
-            search.dispatchEvent(new Event("search"));
+        // Search for nearest match and add it
+        const matchedOps = this.manager.ops.filterOperations(this.uriParams.op, false);
+        if (matchedOps.length) {
+            this.manager.recipe.addOperation(matchedOps[0].name);
         }
+
+        // Populate search with the string
+        const search = document.getElementById("search");
+
+        search.value = this.uriParams.op;
+        search.dispatchEvent(new Event("search"));
     }
 
     // Read in input data from URI params
     if (this.uriParams.input) {
-        this.autoBakePause = true;
         try {
             const inputData = Utils.fromBase64(this.uriParams.input);
             this.setInput(inputData);
-        } catch (err) {
-        } finally {
-            this.autoBakePause = false;
-        }
+        } catch (err) {}
     }
 
+    this.autoBakePause = false;
     this.autoBake();
 };
 
@@ -440,6 +441,7 @@ App.prototype.getRecipeConfig = function() {
 /**
  * Given a recipe configuration, sets the recipe to that configuration.
  *
+ * @fires Manager#statechange
  * @param {Object[]} recipeConfig - The recipe configuration
  */
 App.prototype.setRecipeConfig = function(recipeConfig) {
@@ -529,7 +531,7 @@ App.prototype.setCompileMessage = function() {
 
 /**
  * Determines whether the browser supports Local Storage and if it is accessible.
- * 
+ *
  * @returns {boolean}
  */
 App.prototype.isLocalStorageAvailable = function() {
@@ -569,7 +571,7 @@ App.prototype.isLocalStorageAvailable = function() {
 App.prototype.alert = function(str, style, timeout, silent) {
     const time = new Date();
 
-    console.log("[" + time.toLocaleString() + "] " + str);
+    log.info("[" + time.toLocaleString() + "] " + str);
     if (silent) return;
 
     style = style || "danger";

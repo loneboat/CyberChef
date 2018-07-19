@@ -27,7 +27,7 @@ const Unicode = {
      */
     runUnescape: function(input, args) {
         let prefix = Unicode._prefixToRegex[args[0]],
-            regex = new RegExp(prefix+"([a-f\\d]{4,6})", "ig"),
+            regex = new RegExp(prefix+"([a-f\\d]{4})", "ig"),
             output = "",
             m,
             i = 0;
@@ -45,6 +45,40 @@ const Unicode = {
 
         // Add all after final match
         output += input.slice(i, input.length);
+
+        return output;
+    },
+
+
+    /**
+     * Escape Unicode Characters operation.
+     *
+     * @param {string} input
+     * @param {Object[]} args
+     * @returns {string}
+     */
+    runEscape: function(input, args) {
+        const regexWhitelist = /[ -~]/i,
+            prefix = args[0],
+            encodeAll = args[1],
+            padding = args[2],
+            uppercaseHex = args[3];
+
+        let output = "",
+            character = "";
+
+        for (let i = 0; i < input.length; i++) {
+            character = input[i];
+            if (!encodeAll && regexWhitelist.test(character)) {
+                // It’s a printable ASCII character so don’t escape it.
+                output += character;
+                continue;
+            }
+
+            let cp = character.codePointAt(0).toString(16);
+            if (uppercaseHex) cp = cp.toUpperCase();
+            output += prefix + cp.padStart(padding, "0");
+        }
 
         return output;
     },

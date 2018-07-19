@@ -21,7 +21,12 @@ const ByteRepr = {
      * @constant
      * @default
      */
-    HEX_DELIM_OPTIONS: ["Space", "Comma", "Semi-colon", "Colon", "Line feed", "CRLF", "0x", "\\x", "None"],
+    TO_HEX_DELIM_OPTIONS: ["Space", "Comma", "Semi-colon", "Colon", "Line feed", "CRLF", "0x", "\\x", "None"],
+    /**
+     * @constant
+     * @default
+     */
+    FROM_HEX_DELIM_OPTIONS: ["Auto", "Space", "Comma", "Semi-colon", "Colon", "Line feed", "CRLF", "0x", "\\x", "None"],
     /**
      * @constant
      * @default
@@ -31,13 +36,13 @@ const ByteRepr = {
     /**
      * To Hex operation.
      *
-     * @param {byteArray} input
+     * @param {ArrayBuffer} input
      * @param {Object[]} args
      * @returns {string}
      */
     runToHex: function(input, args) {
         const delim = Utils.charRep[args[0] || "Space"];
-        return Utils.toHex(input, delim, 2);
+        return Utils.toHex(new Uint8Array(input), delim, 2);
     },
 
 
@@ -148,6 +153,10 @@ const ByteRepr = {
             throw "Error: Base argument must be between 2 and 36";
         }
 
+        if (input.length === 0) {
+            return [];
+        }
+
         if (base !== 16 && ENVIRONMENT_IS_WORKER()) self.setOption("attemptHighlight", false);
 
         // Split into groups of 2 if the whole string is concatenated and
@@ -186,7 +195,7 @@ const ByteRepr = {
         // 0x and \x are added to the beginning if they are selected, so increment the positions accordingly
         if (delim === "0x" || delim === "\\x") {
             pos[0].start += 2;
-            pos[0].end   += 2;
+            pos[0].end += 2;
         }
         return pos;
     },
@@ -266,7 +275,7 @@ const ByteRepr = {
             padding = 8;
 
         for (let i = 0; i < input.length; i++) {
-            output += Utils.pad(input[i].toString(2), padding) + delim;
+            output += input[i].toString(2).padStart(padding, "0") + delim;
         }
 
         if (delim.length) {

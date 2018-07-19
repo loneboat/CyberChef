@@ -35,7 +35,6 @@
         }],
 
         // disable rules from base configurations
-        "no-console": "off",
         "no-control-regex": "off",
 
         // stylistic conventions
@@ -52,6 +51,7 @@
             "mode": "minimum"
         }],
         "indent": ["error", 4, {
+            "ignoreComments": true,
             "ArrayExpression": "first",
             "SwitchCase": 1
         }],
@@ -90,6 +90,7 @@
         "$": false,
         "jQuery": false,
         "moment": false,
+        "log": false,
 
         "COMPILE_TIME": false,
         "COMPILE_MSG": false,

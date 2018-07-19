@@ -1,4 +1,5 @@
 import FlowControl from "../../FlowControl.js";
+import Arithmetic from "../../operations/Arithmetic.js";
 import Base from "../../operations/Base.js";
 import Base58 from "../../operations/Base58.js";
 import Base64 from "../../operations/Base64.js";
@@ -9,7 +10,7 @@ import Convert from "../../operations/Convert.js";
 import DateTime from "../../operations/DateTime.js";
 import Endian from "../../operations/Endian.js";
 import Entropy from "../../operations/Entropy.js";
-import Extract from "../../operations/Extract.js";
+import Filetime from "../../operations/Filetime.js";
 import FileType from "../../operations/FileType.js";
 import Hexdump from "../../operations/Hexdump.js";
 import HTML from "../../operations/HTML.js";
@@ -20,13 +21,16 @@ import NetBIOS from "../../operations/NetBIOS.js";
 import Numberwang from "../../operations/Numberwang.js";
 import OS from "../../operations/OS.js";
 import OTP from "../../operations/OTP.js";
+import PHP from "../../operations/PHP.js";
 import QuotedPrintable from "../../operations/QuotedPrintable.js";
 import Rotate from "../../operations/Rotate.js";
 import SeqUtils from "../../operations/SeqUtils.js";
 import StrUtils from "../../operations/StrUtils.js";
 import Tidy from "../../operations/Tidy.js";
+import ToTable from "../../operations/ToTable.js";
 import Unicode from "../../operations/Unicode.js";
 import UUID from "../../operations/UUID.js";
+import XKCD from "../../operations/XKCD.js";
 
 
 /**
@@ -37,8 +41,10 @@ import UUID from "../../operations/UUID.js";
  *
  * Libraries:
  *  - Utils.js
- *    - CryptoJS
  *  - otp
+ *  - crypto
+ *  - bignumber.js
+ *  - jsesc
  *
  * @author n1474335 [n1474335@gmail.com]
  * @copyright Crown Copyright 2017
@@ -77,6 +83,7 @@ OpModules.Default = {
     "Strip HTML tags":      HTML.runStripTags,
     "Parse colour code":    HTML.runParseColourCode,
     "Unescape Unicode Characters": Unicode.runUnescape,
+    "Escape Unicode Characters": Unicode.runEscape,
     "To Quoted Printable":  QuotedPrintable.runTo,
     "From Quoted Printable": QuotedPrintable.runFrom,
     "Swap endianness":      Endian.runSwapEndianness,
@@ -88,7 +95,7 @@ OpModules.Default = {
     "Bit shift right":      BitwiseOp.runBitShiftRight,
     "XOR":                  BitwiseOp.runXor,
     "XOR Brute Force":      BitwiseOp.runXorBrute,
-    "OR":                   BitwiseOp.runXor,
+    "OR":                   BitwiseOp.runOr,
     "NOT":                  BitwiseOp.runNot,
     "AND":                  BitwiseOp.runAnd,
     "ADD":                  BitwiseOp.runAdd,
@@ -98,17 +105,16 @@ OpModules.Default = {
     "Format MAC addresses": MAC.runFormat,
     "Encode NetBIOS Name":  NetBIOS.runEncodeName,
     "Decode NetBIOS Name":  NetBIOS.runDecodeName,
-    "Regular expression":   StrUtils.runRegex,
     "Offset checker":       StrUtils.runOffsetChecker,
     "To Upper case":        StrUtils.runUpper,
     "To Lower case":        StrUtils.runLower,
-    "Find / Replace":       StrUtils.runFindReplace,
     "Split":                StrUtils.runSplit,
     "Filter":               StrUtils.runFilter,
     "Escape string":        StrUtils.runEscape,
     "Unescape string":      StrUtils.runUnescape,
     "Head":                 StrUtils.runHead,
     "Tail":                 StrUtils.runTail,
+    "Hamming Distance":     StrUtils.runHamming,
     "Remove whitespace":    Tidy.runRemoveWhitespace,
     "Remove null bytes":    Tidy.runRemoveNulls,
     "Drop bytes":           Tidy.runDropBytes,
@@ -131,17 +137,11 @@ OpModules.Default = {
     "Translate DateTime Format": DateTime.runTranslateFormat,
     "From UNIX Timestamp":  DateTime.runFromUnixTimestamp,
     "To UNIX Timestamp":    DateTime.runToUnixTimestamp,
-    "Strings":              Extract.runStrings,
-    "Extract IP addresses": Extract.runIp,
-    "Extract email addresses": Extract.runEmail,
-    "Extract MAC addresses": Extract.runMac,
-    "Extract URLs":         Extract.runUrls,
-    "Extract domains":      Extract.runDomains,
-    "Extract file paths":   Extract.runFilePaths,
-    "Extract dates":        Extract.runDates,
+    "Sleep":                DateTime.runSleep,
     "Microsoft Script Decoder": MS.runDecodeScript,
     "Entropy":              Entropy.runEntropy,
     "Frequency distribution": Entropy.runFreqDistrib,
+    "Chi Square":           Entropy.runChiSq,
     "Detect File Type":     FileType.runDetect,
     "Scan for Embedded Files": FileType.runScanForEmbeddedFiles,
     "Generate UUID":        UUID.runGenerateV4,
@@ -151,10 +151,23 @@ OpModules.Default = {
     "Fork":                 FlowControl.runFork,
     "Merge":                FlowControl.runMerge,
     "Register":             FlowControl.runRegister,
+    "Label":                FlowControl.runComment,
     "Jump":                 FlowControl.runJump,
     "Conditional Jump":     FlowControl.runCondJump,
     "Return":               FlowControl.runReturn,
     "Comment":              FlowControl.runComment,
+    "PHP Deserialize":      PHP.runDeserialize,
+    "Sum":                  Arithmetic.runSum,
+    "Subtract":             Arithmetic.runSub,
+    "Multiply":             Arithmetic.runMulti,
+    "Divide":               Arithmetic.runDiv,
+    "Mean":                 Arithmetic.runMean,
+    "Median":               Arithmetic.runMedian,
+    "Standard Deviation":   Arithmetic.runStdDev,
+    "To Table":             ToTable.runToTable,
+    "Windows Filetime to UNIX Timestamp": Filetime.runFromFiletimeToUnix,
+    "UNIX Timestamp to Windows Filetime": Filetime.runToFiletimeFromUnix,
+    "XKCD Random Number":  XKCD.runRandomNumber,
 
 
     /*

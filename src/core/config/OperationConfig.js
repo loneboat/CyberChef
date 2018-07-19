@@ -1,3 +1,4 @@
+import Arithmetic from "../operations/Arithmetic.js";
 import Base from "../operations/Base.js";
 import Base58 from "../operations/Base58.js";
 import Base64 from "../operations/Base64.js";
@@ -26,13 +27,17 @@ import JS from "../operations/JS.js";
 import MAC from "../operations/MAC.js";
 import MorseCode from "../operations/MorseCode.js";
 import NetBIOS from "../operations/NetBIOS.js";
+import PHP from "../operations/PHP.js";
+import PGP from "../operations/PGP.js";
 import PublicKey from "../operations/PublicKey.js";
 import Punycode from "../operations/Punycode.js";
+import Regex from "../operations/Regex.js";
 import Rotate from "../operations/Rotate.js";
 import SeqUtils from "../operations/SeqUtils.js";
 import Shellcode from "../operations/Shellcode.js";
 import StrUtils from "../operations/StrUtils.js";
 import Tidy from "../operations/Tidy.js";
+import ToTable from "../operations/ToTable.js";
 import Unicode from "../operations/Unicode.js";
 import URL_ from "../operations/URL.js";
 
@@ -136,15 +141,15 @@ const OperationConfig = {
     },
     "Jump": {
         module: "Default",
-        description: "Jump forwards or backwards over the specified number of operations.",
+        description: "Jump forwards or backwards to the specified Label",
         inputType: "string",
         outputType: "string",
         flowControl: true,
         args: [
             {
-                name: "Number of operations to jump over",
-                type: "number",
-                value: 0
+                name: "Label name",
+                type: "string",
+                value: ""
             },
             {
                 name: "Maximum jumps (if jumping backwards)",
@@ -155,7 +160,7 @@ const OperationConfig = {
     },
     "Conditional Jump": {
         module: "Default",
-        description: "Conditionally jump forwards or backwards over the specified number of operations based on whether the data matches the specified regular expression.",
+        description: "Conditionally jump forwards or backwards to the specified Label  based on whether the data matches the specified regular expression.",
         inputType: "string",
         outputType: "string",
         flowControl: true,
@@ -166,14 +171,33 @@ const OperationConfig = {
                 value: ""
             },
             {
-                name: "Number of operations to jump over if match found",
-                type: "number",
-                value: 0
+                name: "Invert match",
+                type: "boolean",
+                value: false
+            },
+            {
+                name: "Label name",
+                type: "shortString",
+                value: ""
             },
             {
                 name: "Maximum jumps (if jumping backwards)",
                 type: "number",
                 value: 10
+            }
+        ]
+    },
+    "Label": {
+        module: "Default",
+        description: "Provides a location for conditional and fixed jumps to redirect execution to.",
+        inputType: "string",
+        outputType: "string",
+        flowControl: true,
+        args: [
+            {
+                name: "Name",
+                type: "shortString",
+                value: ""
             }
         ]
     },
@@ -224,7 +248,7 @@ const OperationConfig = {
         description: "Base64 is a notation for encoding arbitrary byte data using a restricted set of symbols that can be conveniently used by humans and processed by computers.<br><br>This operation encodes data in an ASCII Base64 string.<br><br>e.g. <code>hello</code> becomes <code>aGVsbG8=</code>",
         highlight: "func",
         highlightReverse: "func",
-        inputType: "byteArray",
+        inputType: "ArrayBuffer",
         outputType: "string",
         args: [
             {
@@ -499,6 +523,125 @@ const OperationConfig = {
             }
         ]
     },
+    "Sum": {
+        module: "Default",
+        description: "Adds together a list of numbers. If an item in the string is not a number it is excluded from the list.<br><br>e.g. <code>0x0a 8 .5</code> becomes <code>18.5</code>",
+        inputType: "string",
+        outputType: "BigNumber",
+        args: [
+            {
+                name: "Delimiter",
+                type: "option",
+                value: Arithmetic.DELIM_OPTIONS
+            }
+        ]
+    },
+    "Subtract": {
+        module: "Default",
+        description: "Subtracts a list of numbers. If an item in the string is not a number it is excluded from the list.<br><br>e.g. <code>0x0a 8 .5</code> becomes <code>1.5</code>",
+        inputType: "string",
+        outputType: "BigNumber",
+        args: [
+            {
+                name: "Delimiter",
+                type: "option",
+                value: Arithmetic.DELIM_OPTIONS
+            }
+        ]
+    },
+    "Multiply": {
+        module: "Default",
+        description: "Multiplies a list of numbers. If an item in the string is not a number it is excluded from the list.<br><br>e.g. <code>0x0a 8 .5</code> becomes <code>40</code>",
+        inputType: "string",
+        outputType: "BigNumber",
+        args: [
+            {
+                name: "Delimiter",
+                type: "option",
+                value: Arithmetic.DELIM_OPTIONS
+            }
+        ]
+    },
+    "Divide": {
+        module: "Default",
+        description: "Divides a list of numbers. If an item in the string is not a number it is excluded from the list.<br><br>e.g. <code>0x0a 8 .5</code> becomes <code>2.5</code>",
+        inputType: "string",
+        outputType: "BigNumber",
+        args: [
+            {
+                name: "Delimiter",
+                type: "option",
+                value: Arithmetic.DELIM_OPTIONS
+            }
+        ]
+    },
+    "Mean": {
+        module: "Default",
+        description: "Computes the mean (average) of a number list. If an item in the string is not a number it is excluded from the list.<br><br>e.g. <code>0x0a 8 .5 .5</code> becomes <code>4.75</code>",
+        inputType: "string",
+        outputType: "BigNumber",
+        args: [
+            {
+                name: "Delimiter",
+                type: "option",
+                value: Arithmetic.DELIM_OPTIONS
+            }
+        ]
+    },
+    "Median": {
+        module: "Default",
+        description: "Computes the median of a number list. If an item in the string is not a number it is excluded from the list.<br><br>e.g. <code>0x0a 8 1 .5</code> becomes <code>4.5</code>",
+        inputType: "string",
+        outputType: "BigNumber",
+        args: [
+            {
+                name: "Delimiter",
+                type: "option",
+                value: Arithmetic.DELIM_OPTIONS
+            }
+        ]
+    },
+    "Standard Deviation": {
+        module: "Default",
+        description: "Computes the standard deviation of a number list. If an item in the string is not a number it is excluded from the list.<br><br>e.g. <code>0x0a 8 .5</code> becomes <code>4.089281382128433</code>",
+        inputType: "string",
+        outputType: "BigNumber",
+        args: [
+            {
+                name: "Delimiter",
+                type: "option",
+                value: Arithmetic.DELIM_OPTIONS
+            }
+        ]
+    },
+    "To Table": {
+        module: "Default",
+        description: "Data can be split on different characters and rendered as an HTML or ASCII table with an optional header row.<br><br>Supports the CSV (Comma Separated Values) file format by default. Change the cell delimiter argument to <code>\\t</code> to support TSV (Tab Separated Values) or <code>|</code> for PSV (Pipe Separated Values).<br><br>You can enter as many delimiters as you like. Each character will be treat as a separate possible delimiter.",
+        inputType: "string",
+        outputType: "html",
+        args: [
+            {
+                name: "Cell delimiters",
+                type: "binaryShortString",
+                value: ","
+            },
+            {
+                name: "Row delimiters",
+                type: "binaryShortString",
+                value: "\\n\\r"
+            },
+            {
+                name: "Make first row header",
+                type: "boolean",
+                value: false
+            },
+            {
+                name: "Format",
+                type: "option",
+                value: ToTable.FORMATS
+            }
+        ]
+    },
     "From Hex": {
         module: "Default",
         description: "Converts a hexadecimal byte string back into its raw value.<br><br>e.g. <code>ce 93 ce b5 ce b9 ce ac 20 cf 83 ce bf cf 85 0a</code> becomes the UTF-8 encoded string <code>Γειά σου</code>",
@@ -510,7 +653,7 @@ const OperationConfig = {
             {
                 name: "Delimiter",
                 type: "option",
-                value: ByteRepr.HEX_DELIM_OPTIONS
+                value: ByteRepr.FROM_HEX_DELIM_OPTIONS
             }
         ]
     },
@@ -519,13 +662,13 @@ const OperationConfig = {
         description: "Converts the input string to hexadecimal bytes separated by the specified delimiter.<br><br>e.g. The UTF-8 encoded string <code>Γειά σου</code> becomes <code>ce 93 ce b5 ce b9 ce ac 20 cf 83 ce bf cf 85 0a</code>",
         highlight: "func",
         highlightReverse: "func",
-        inputType: "byteArray",
+        inputType: "ArrayBuffer",
         outputType: "string",
         args: [
             {
                 name: "Delimiter",
                 type: "option",
-                value: ByteRepr.HEX_DELIM_OPTIONS
+                value: ByteRepr.TO_HEX_DELIM_OPTIONS
             }
         ]
     },
@@ -670,7 +813,7 @@ const OperationConfig = {
         description: "Creates a hexdump of the input data, displaying both the hexadecimal values of each byte and an ASCII representation alongside.",
         highlight: "func",
         highlightReverse: "func",
-        inputType: "byteArray",
+        inputType: "ArrayBuffer",
         outputType: "string",
         args: [
             {
@@ -694,7 +837,7 @@ const OperationConfig = {
         module: "Default",
         description: "Converts a number to decimal from a given numerical base.",
         inputType: "string",
-        outputType: "number",
+        outputType: "BigNumber",
         args: [
             {
                 name: "Radix",
@@ -706,7 +849,7 @@ const OperationConfig = {
     "To Base": {
         module: "Default",
         description: "Converts a decimal number to a given numerical base.",
-        inputType: "number",
+        inputType: "BigNumber",
         outputType: "string",
         args: [
             {
@@ -796,6 +939,34 @@ const OperationConfig = {
                 name: "Prefix",
                 type: "option",
                 value: Unicode.PREFIXES
+            }
+        ]
+    },
+    "Escape Unicode Characters": {
+        module: "Default",
+        description: "Converts characters to their unicode-escaped notations.<br><br>Supports the prefixes:<ul><li><code>\\u</code></li><li><code>%u</code></li><li><code>U+</code></li></ul>e.g. <code>σου</code> becomes <code>\\u03C3\\u03BF\\u03C5</code>",
+        inputType: "string",
+        outputType: "string",
+        args: [
+            {
+                name: "Prefix",
+                type: "option",
+                value: Unicode.PREFIXES
+            },
+            {
+                name: "Encode all chars",
+                type: "boolean",
+                value: false
+            },
+            {
+                name: "Padding",
+                type: "number",
+                value: 4
+            },
+            {
+                name: "Uppercase hex",
+                type: "boolean",
+                value: true
             }
         ]
     },
@@ -990,287 +1161,7 @@ const OperationConfig = {
     },
     "AES Decrypt": {
         module: "Ciphers",
-        description: "To successfully decrypt AES, you need either:<ul><li>The passphrase</li><li>Or the key and IV</li></ul>The IV should be the first 16 bytes of encrypted material.",
-        inputType: "string",
-        outputType: "string",
-        args: [
-            {
-                name: "Passphrase/Key",
-                type: "toggleString",
-                value: "",
-                toggleValues: Cipher.IO_FORMAT2
-            },
-            {
-                name: "IV",
-                type: "toggleString",
-                value: "",
-                toggleValues: Cipher.IO_FORMAT1
-            },
-            {
-                name: "Salt",
-                type: "toggleString",
-                value: "",
-                toggleValues: Cipher.IO_FORMAT1
-            },
-            {
-                name: "Mode",
-                type: "option",
-                value: Cipher.MODES
-            },
-            {
-                name: "Padding",
-                type: "option",
-                value: Cipher.PADDING
-            },
-            {
-                name: "Input format",
-                type: "option",
-                value: Cipher.IO_FORMAT1
-            },
-            {
-                name: "Output format",
-                type: "option",
-                value: Cipher.IO_FORMAT2
-            },
-        ]
-    },
-    "AES Encrypt": {
-        module: "Ciphers",
-        description: "Input: Either enter a passphrase (which will be used to derive a key using the OpenSSL KDF) or both the key and IV.<br><br>Advanced Encryption Standard (AES) is a U.S. Federal Information Processing Standard (FIPS). It was selected after a 5-year process where 15 competing designs were evaluated.<br><br>AES-128, AES-192, and AES-256 are supported.  The variant will be chosen based on the size of the key passed in.  If a passphrase is used, a 256-bit key will be generated.",
-        inputType: "string",
-        outputType: "string",
-        args: [
-            {
-                name: "Passphrase/Key",
-                type: "toggleString",
-                value: "",
-                toggleValues: Cipher.IO_FORMAT2
-            },
-            {
-                name: "IV",
-                type: "toggleString",
-                value: "",
-                toggleValues: Cipher.IO_FORMAT1
-            },
-            {
-                name: "Salt",
-                type: "toggleString",
-                value: "",
-                toggleValues: Cipher.IO_FORMAT1
-            },
-            {
-                name: "Mode",
-                type: "option",
-                value: Cipher.MODES
-            },
-            {
-                name: "Padding",
-                type: "option",
-                value: Cipher.PADDING
-            },
-            {
-                name: "Output result",
-                type: "option",
-                value: Cipher.RESULT_TYPE
-            },
-            {
-                name: "Output format",
-                type: "option",
-                value: Cipher.IO_FORMAT1
-            },
-        ]
-    },
-    "DES Decrypt": {
-        module: "Ciphers",
-        description: "To successfully decrypt DES, you need either:<ul><li>The passphrase</li><li>Or the key and IV</li></ul>The IV should be the first 8 bytes of encrypted material.",
-        inputType: "string",
-        outputType: "string",
-        args: [
-            {
-                name: "Passphrase/Key",
-                type: "toggleString",
-                value: "",
-                toggleValues: Cipher.IO_FORMAT2
-            },
-            {
-                name: "IV",
-                type: "toggleString",
-                value: "",
-                toggleValues: Cipher.IO_FORMAT1
-
-            },
-            {
-                name: "Salt",
-                type: "toggleString",
-                value: "",
-                toggleValues: Cipher.IO_FORMAT1
-            },
-            {
-                name: "Mode",
-                type: "option",
-                value: Cipher.MODES
-            },
-            {
-                name: "Padding",
-                type: "option",
-                value: Cipher.PADDING
-            },
-            {
-                name: "Input format",
-                type: "option",
-                value: Cipher.IO_FORMAT1
-            },
-            {
-                name: "Output format",
-                type: "option",
-                value: Cipher.IO_FORMAT2
-            },
-        ]
-    },
-    "DES Encrypt": {
-        module: "Ciphers",
-        description: "Input: Either enter a passphrase (which will be used to derive a key using the OpenSSL KDF) or both the key and IV.<br><br>DES is a previously dominant algorithm for encryption, and was published as an official U.S. Federal Information Processing Standard (FIPS). It is now considered to be insecure due to its small key size.",
-        inputType: "string",
-        outputType: "string",
-        args: [
-            {
-                name: "Passphrase/Key",
-                type: "toggleString",
-                value: "",
-                toggleValues: Cipher.IO_FORMAT2
-            },
-            {
-                name: "IV",
-                type: "toggleString",
-                value: "",
-                toggleValues: Cipher.IO_FORMAT1
-
-            },
-            {
-                name: "Salt",
-                type: "toggleString",
-                value: "",
-                toggleValues: Cipher.IO_FORMAT1
-            },
-            {
-                name: "Mode",
-                type: "option",
-                value: Cipher.MODES
-            },
-            {
-                name: "Padding",
-                type: "option",
-                value: Cipher.PADDING
-            },
-            {
-                name: "Output result",
-                type: "option",
-                value: Cipher.RESULT_TYPE
-            },
-            {
-                name: "Output format",
-                type: "option",
-                value: Cipher.IO_FORMAT1
-            },
-        ]
-    },
-    "Triple DES Decrypt": {
-        module: "Ciphers",
-        description: "To successfully decrypt Triple DES, you need either:<ul><li>The passphrase</li><li>Or the key and IV</li></ul>The IV should be the first 8 bytes of encrypted material.",
-        inputType: "string",
-        outputType: "string",
-        args: [
-            {
-                name: "Passphrase/Key",
-                type: "toggleString",
-                value: "",
-                toggleValues: Cipher.IO_FORMAT2
-            },
-            {
-                name: "IV",
-                type: "toggleString",
-                value: "",
-                toggleValues: Cipher.IO_FORMAT1
-
-            },
-            {
-                name: "Salt",
-                type: "toggleString",
-                value: "",
-                toggleValues: Cipher.IO_FORMAT1
-            },
-            {
-                name: "Mode",
-                type: "option",
-                value: Cipher.MODES
-            },
-            {
-                name: "Padding",
-                type: "option",
-                value: Cipher.PADDING
-            },
-            {
-                name: "Input format",
-                type: "option",
-                value: Cipher.IO_FORMAT1
-            },
-            {
-                name: "Output format",
-                type: "option",
-                value: Cipher.IO_FORMAT2
-            },
-        ]
-    },
-    "Triple DES Encrypt": {
-        module: "Ciphers",
-        description: "Input: Either enter a passphrase (which will be used to derive a key using the OpenSSL KDF) or both the key and IV.<br><br>Triple DES applies DES three times to each block to increase key size.",
-        inputType: "string",
-        outputType: "string",
-        args: [
-            {
-                name: "Passphrase/Key",
-                type: "toggleString",
-                value: "",
-                toggleValues: Cipher.IO_FORMAT2
-            },
-            {
-                name: "IV",
-                type: "toggleString",
-                value: "",
-                toggleValues: Cipher.IO_FORMAT1
-
-            },
-            {
-                name: "Salt",
-                type: "toggleString",
-                value: "",
-                toggleValues: Cipher.IO_FORMAT1
-            },
-            {
-                name: "Mode",
-                type: "option",
-                value: Cipher.MODES
-            },
-            {
-                name: "Padding",
-                type: "option",
-                value: Cipher.PADDING
-            },
-            {
-                name: "Output result",
-                type: "option",
-                value: Cipher.RESULT_TYPE
-            },
-            {
-                name: "Output format",
-                type: "option",
-                value: Cipher.IO_FORMAT1
-            },
-        ]
-    },
-    "Blowfish Decrypt": {
-        module: "Ciphers",
-        description: "Blowfish is a symmetric-key block cipher designed in 1993 by Bruce Schneier and included in a large number of cipher suites and encryption products. AES now receives more attention.",
+        description: "Advanced Encryption Standard (AES) is a U.S. Federal Information Processing Standard (FIPS). It was selected after a 5-year process where 15 competing designs were evaluated.<br><br><b>Key:</b> The following algorithms will be used based on the size of the key:<ul><li>16 bytes = AES-128</li><li>24 bytes = AES-192</li><li>32 bytes = AES-256</li></ul><br><br><b>IV:</b> The Initialization Vector should be 16 bytes long. If not entered, it will default to 16 null bytes.<br><br><b>Padding:</b> In CBC and ECB mode, PKCS#7 padding will be used.<br><br><b>GCM Tag:</b> This field is ignored unless 'GCM' mode is used.",
         inputType: "string",
         outputType: "string",
         args: [
@@ -1278,7 +1169,229 @@ const OperationConfig = {
                 name: "Key",
                 type: "toggleString",
                 value: "",
-                toggleValues: Cipher.IO_FORMAT2
+                toggleValues: Cipher.IO_FORMAT1
+            },
+            {
+                name: "IV",
+                type: "toggleString",
+                value: "",
+                toggleValues: Cipher.IO_FORMAT1
+            },
+            {
+                name: "Mode",
+                type: "option",
+                value: Cipher.AES_MODES
+            },
+            {
+                name: "Input",
+                type: "option",
+                value: Cipher.IO_FORMAT4
+            },
+            {
+                name: "Output",
+                type: "option",
+                value: Cipher.IO_FORMAT3
+            },
+            {
+                name: "GCM Tag",
+                type: "toggleString",
+                value: "",
+                toggleValues: Cipher.IO_FORMAT1
+            },
+        ]
+    },
+    "AES Encrypt": {
+        module: "Ciphers",
+        description: "Advanced Encryption Standard (AES) is a U.S. Federal Information Processing Standard (FIPS). It was selected after a 5-year process where 15 competing designs were evaluated.<br><br><b>Key:</b> The following algorithms will be used based on the size of the key:<ul><li>16 bytes = AES-128</li><li>24 bytes = AES-192</li><li>32 bytes = AES-256</li></ul>You can generate a password-based key using one of the KDF operations.<br><br><b>IV:</b> The Initialization Vector should be 16 bytes long. If not entered, it will default to 16 null bytes.<br><br><b>Padding:</b> In CBC and ECB mode, PKCS#7 padding will be used.",
+        inputType: "string",
+        outputType: "string",
+        args: [
+            {
+                name: "Key",
+                type: "toggleString",
+                value: "",
+                toggleValues: Cipher.IO_FORMAT1
+            },
+            {
+                name: "IV",
+                type: "toggleString",
+                value: "",
+                toggleValues: Cipher.IO_FORMAT1
+            },
+            {
+                name: "Mode",
+                type: "option",
+                value: Cipher.AES_MODES
+            },
+            {
+                name: "Input",
+                type: "option",
+                value: Cipher.IO_FORMAT3
+            },
+            {
+                name: "Output",
+                type: "option",
+                value: Cipher.IO_FORMAT4
+            },
+        ]
+    },
+    "DES Decrypt": {
+        module: "Ciphers",
+        description: "DES is a previously dominant algorithm for encryption, and was published as an official U.S. Federal Information Processing Standard (FIPS). It is now considered to be insecure due to its small key size.<br><br><b>Key:</b> DES uses a key length of 8 bytes (64 bits).<br>Triple DES uses a key length of 24 bytes (192 bits).<br><br><b>IV:</b> The Initialization Vector should be 8 bytes long. If not entered, it will default to 8 null bytes.<br><br><b>Padding:</b> In CBC and ECB mode, PKCS#7 padding will be used.",
+        inputType: "string",
+        outputType: "string",
+        args: [
+            {
+                name: "Key",
+                type: "toggleString",
+                value: "",
+                toggleValues: Cipher.IO_FORMAT1
+            },
+            {
+                name: "IV",
+                type: "toggleString",
+                value: "",
+                toggleValues: Cipher.IO_FORMAT1
+            },
+            {
+                name: "Mode",
+                type: "option",
+                value: Cipher.DES_MODES
+            },
+            {
+                name: "Input",
+                type: "option",
+                value: Cipher.IO_FORMAT4
+            },
+            {
+                name: "Output",
+                type: "option",
+                value: Cipher.IO_FORMAT3
+            },
+        ]
+    },
+    "DES Encrypt": {
+        module: "Ciphers",
+        description: "DES is a previously dominant algorithm for encryption, and was published as an official U.S. Federal Information Processing Standard (FIPS). It is now considered to be insecure due to its small key size.<br><br><b>Key:</b> DES uses a key length of 8 bytes (64 bits).<br>Triple DES uses a key length of 24 bytes (192 bits).<br><br>You can generate a password-based key using one of the KDF operations.<br><br><b>IV:</b> The Initialization Vector should be 8 bytes long. If not entered, it will default to 8 null bytes.<br><br><b>Padding:</b> In CBC and ECB mode, PKCS#7 padding will be used.",
+        inputType: "string",
+        outputType: "string",
+        args: [
+            {
+                name: "Key",
+                type: "toggleString",
+                value: "",
+                toggleValues: Cipher.IO_FORMAT1
+            },
+            {
+                name: "IV",
+                type: "toggleString",
+                value: "",
+                toggleValues: Cipher.IO_FORMAT1
+            },
+            {
+                name: "Mode",
+                type: "option",
+                value: Cipher.DES_MODES
+            },
+            {
+                name: "Input",
+                type: "option",
+                value: Cipher.IO_FORMAT3
+            },
+            {
+                name: "Output",
+                type: "option",
+                value: Cipher.IO_FORMAT4
+            },
+        ]
+    },
+    "Triple DES Decrypt": {
+        module: "Ciphers",
+        description: "Triple DES applies DES three times to each block to increase key size.<br><br><b>Key:</b> Triple DES uses a key length of 24 bytes (192 bits).<br>DES uses a key length of 8 bytes (64 bits).<br><br><b>IV:</b> The Initialization Vector should be 8 bytes long. If not entered, it will default to 8 null bytes.<br><br><b>Padding:</b> In CBC and ECB mode, PKCS#7 padding will be used.",
+        inputType: "string",
+        outputType: "string",
+        args: [
+            {
+                name: "Key",
+                type: "toggleString",
+                value: "",
+                toggleValues: Cipher.IO_FORMAT1
+            },
+            {
+                name: "IV",
+                type: "toggleString",
+                value: "",
+                toggleValues: Cipher.IO_FORMAT1
+            },
+            {
+                name: "Mode",
+                type: "option",
+                value: Cipher.DES_MODES
+            },
+            {
+                name: "Input",
+                type: "option",
+                value: Cipher.IO_FORMAT4
+            },
+            {
+                name: "Output",
+                type: "option",
+                value: Cipher.IO_FORMAT3
+            },
+        ]
+    },
+    "Triple DES Encrypt": {
+        module: "Ciphers",
+        description: "Triple DES applies DES three times to each block to increase key size.<br><br><b>Key:</b> Triple DES uses a key length of 24 bytes (192 bits).<br>DES uses a key length of 8 bytes (64 bits).<br><br>You can generate a password-based key using one of the KDF operations.<br><br><b>IV:</b> The Initialization Vector should be 8 bytes long. If not entered, it will default to 8 null bytes.<br><br><b>Padding:</b> In CBC and ECB mode, PKCS#7 padding will be used.",
+        inputType: "string",
+        outputType: "string",
+        args: [
+            {
+                name: "Key",
+                type: "toggleString",
+                value: "",
+                toggleValues: Cipher.IO_FORMAT1
+            },
+            {
+                name: "IV",
+                type: "toggleString",
+                value: "",
+                toggleValues: Cipher.IO_FORMAT1
+            },
+            {
+                name: "Mode",
+                type: "option",
+                value: Cipher.DES_MODES
+            },
+            {
+                name: "Input",
+                type: "option",
+                value: Cipher.IO_FORMAT3
+            },
+            {
+                name: "Output",
+                type: "option",
+                value: Cipher.IO_FORMAT4
+            },
+        ]
+    },
+    "Blowfish Decrypt": {
+        module: "Ciphers",
+        description: "Blowfish is a symmetric-key block cipher designed in 1993 by Bruce Schneier and included in a large number of cipher suites and encryption products. AES now receives more attention.<br><br><b>IV:</b> The Initialization Vector should be 8 bytes long. If not entered, it will default to 8 null bytes.",
+        inputType: "string",
+        outputType: "string",
+        args: [
+            {
+                name: "Key",
+                type: "toggleString",
+                value: "",
+                toggleValues: Cipher.IO_FORMAT1
+            },
+            {
+                name: "IV",
+                type: "toggleString",
+                value: "",
+                toggleValues: Cipher.IO_FORMAT1
             },
             {
                 name: "Mode",
@@ -1286,7 +1399,12 @@ const OperationConfig = {
                 value: Cipher.BLOWFISH_MODES
             },
             {
-                name: "Input format",
+                name: "Input",
+                type: "option",
+                value: Cipher.BLOWFISH_OUTPUT_TYPES
+            },
+            {
+                name: "Output",
                 type: "option",
                 value: Cipher.IO_FORMAT3
             },
@@ -1294,7 +1412,7 @@ const OperationConfig = {
     },
     "Blowfish Encrypt": {
         module: "Ciphers",
-        description: "Blowfish is a symmetric-key block cipher designed in 1993 by Bruce Schneier and included in a large number of cipher suites and encryption products. AES now receives more attention.",
+        description: "Blowfish is a symmetric-key block cipher designed in 1993 by Bruce Schneier and included in a large number of cipher suites and encryption products. AES now receives more attention.<br><br><b>IV:</b> The Initialization Vector should be 8 bytes long. If not entered, it will default to 8 null bytes.",
         inputType: "string",
         outputType: "string",
         args: [
@@ -1302,7 +1420,13 @@ const OperationConfig = {
                 name: "Key",
                 type: "toggleString",
                 value: "",
-                toggleValues: Cipher.IO_FORMAT2
+                toggleValues: Cipher.IO_FORMAT1
+            },
+            {
+                name: "IV",
+                type: "toggleString",
+                value: "",
+                toggleValues: Cipher.IO_FORMAT1
             },
             {
                 name: "Mode",
@@ -1310,109 +1434,20 @@ const OperationConfig = {
                 value: Cipher.BLOWFISH_MODES
             },
             {
-                name: "Output format",
+                name: "Input",
                 type: "option",
                 value: Cipher.IO_FORMAT3
             },
-        ]
-    },
-    "Rabbit Decrypt": {
-        module: "Ciphers",
-        description: "To successfully decrypt Rabbit, you need either:<ul><li>The passphrase</li><li>Or the key and IV (This is currently broken. You need the key and salt at the moment.)</li></ul>The IV should be the first 8 bytes of encrypted material.",
-        inputType: "string",
-        outputType: "string",
-        args: [
             {
-                name: "Passphrase/Key",
-                type: "toggleString",
-                value: "",
-                toggleValues: Cipher.IO_FORMAT2
-            },
-            {
-                name: "IV",
-                type: "toggleString",
-                value: "",
-                toggleValues: Cipher.IO_FORMAT1
-
-            },
-            {
-                name: "Salt",
-                type: "toggleString",
-                value: "",
-                toggleValues: Cipher.IO_FORMAT1
-            },
-            {
-                name: "Mode",
+                name: "Output",
                 type: "option",
-                value: Cipher.MODES
-            },
-            {
-                name: "Padding",
-                type: "option",
-                value: Cipher.PADDING
-            },
-            {
-                name: "Input format",
-                type: "option",
-                value: Cipher.IO_FORMAT1
-            },
-            {
-                name: "Output format",
-                type: "option",
-                value: Cipher.IO_FORMAT2
-            },
-        ]
-    },
-    "Rabbit Encrypt": {
-        module: "Ciphers",
-        description: "Input: Either enter a passphrase (which will be used to derive a key using the OpenSSL KDF) or both the key and IV.<br><br>Rabbit is a high-performance stream cipher and a finalist in the eSTREAM Portfolio.  It is one of the four designs selected after a 3 1/2 year process where 22 designs were evaluated.",
-        inputType: "string",
-        outputType: "string",
-        args: [
-            {
-                name: "Passphrase/Key",
-                type: "toggleString",
-                value: "",
-                toggleValues: Cipher.IO_FORMAT2
-            },
-            {
-                name: "IV",
-                type: "toggleString",
-                value: "",
-                toggleValues: Cipher.IO_FORMAT1
-
-            },
-            {
-                name: "Salt",
-                type: "toggleString",
-                value: "",
-                toggleValues: Cipher.IO_FORMAT1
-            },
-            {
-                name: "Mode",
-                type: "option",
-                value: Cipher.MODES
-            },
-            {
-                name: "Padding",
-                type: "option",
-                value: Cipher.PADDING
-            },
-            {
-                name: "Output result",
-                type: "option",
-                value: Cipher.RESULT_TYPE
-            },
-            {
-                name: "Output format",
-                type: "option",
-                value: Cipher.IO_FORMAT1
+                value: Cipher.BLOWFISH_OUTPUT_TYPES
             },
         ]
     },
     "RC4": {
         module: "Ciphers",
-        description: "RC4 is a widely-used stream cipher. It is used in popular protocols such as SSL and WEP. Although remarkable for its simplicity and speed, the algorithm's history doesn't inspire confidence in its security.",
+        description: "RC4 (also known as ARC4) is a widely-used stream cipher designed by Ron Rivest. It is used in popular protocols such as SSL and WEP. Although remarkable for its simplicity and speed, the algorithm's history doesn't inspire confidence in its security.",
         highlight: true,
         highlightReverse: true,
         inputType: "string",
@@ -1422,17 +1457,17 @@ const OperationConfig = {
                 name: "Passphrase",
                 type: "toggleString",
                 value: "",
-                toggleValues: Cipher.IO_FORMAT2
+                toggleValues: Cipher.RC4_KEY_FORMAT
             },
             {
                 name: "Input format",
                 type: "option",
-                value: Cipher.IO_FORMAT4
+                value: Cipher.CJS_IO_FORMAT
             },
             {
                 name: "Output format",
                 type: "option",
-                value: Cipher.IO_FORMAT4
+                value: Cipher.CJS_IO_FORMAT
             },
         ]
     },
@@ -1448,17 +1483,17 @@ const OperationConfig = {
                 name: "Passphrase",
                 type: "toggleString",
                 value: "",
-                toggleValues: Cipher.IO_FORMAT2
+                toggleValues: Cipher.RC4_KEY_FORMAT
             },
             {
                 name: "Input format",
                 type: "option",
-                value: Cipher.IO_FORMAT4
+                value: Cipher.CJS_IO_FORMAT
             },
             {
                 name: "Output format",
                 type: "option",
-                value: Cipher.IO_FORMAT4
+                value: Cipher.CJS_IO_FORMAT
             },
             {
                 name: "Number of bytes to drop",
@@ -1467,50 +1502,96 @@ const OperationConfig = {
             },
         ]
     },
-    "Derive PBKDF2 key": {
+    "RC2 Decrypt": {
         module: "Ciphers",
-        description: "PBKDF2 is a password-based key derivation function. In many applications of cryptography, user security is ultimately dependent on a password, and because a password usually can't be used directly as a cryptographic key, some processing is required.<br><br>A salt provides a large set of keys for any given password, and an iteration count increases the cost of producing keys from a password, thereby also increasing the difficulty of attack.<br><br>Enter your passphrase as the input and then set the relevant options to generate a key.",
+        description: "RC2 (also known as ARC2) is a symmetric-key block cipher designed by Ron Rivest in 1987. 'RC' stands for 'Rivest Cipher'.<br><br><b>Key:</b> RC2 uses a variable size key.<br><br><b>IV:</b> To run the cipher in CBC mode, the Initialization Vector should be 8 bytes long. If the IV is left blank, the cipher will run in ECB mode.<br><br><b>Padding:</b> In both CBC and ECB mode, PKCS#7 padding will be used.",
         inputType: "string",
         outputType: "string",
         args: [
             {
-                name: "Key size",
-                type: "number",
-                value: Cipher.KDF_KEY_SIZE
+                name: "Key",
+                type: "toggleString",
+                value: "",
+                toggleValues: Cipher.IO_FORMAT1
             },
             {
-                name: "Iterations",
-                type: "number",
-                value: Cipher.KDF_ITERATIONS
+                name: "IV",
+                type: "toggleString",
+                value: "",
+                toggleValues: Cipher.IO_FORMAT1
             },
             {
-                name: "Hashing function",
+                name: "Input",
                 type: "option",
-                value: Cipher.HASHERS
+                value: Cipher.IO_FORMAT4
             },
             {
-                name: "Salt (hex)",
-                type: "string",
-                value: ""
-            },
-            {
-                name: "Input format",
-                type: "option",
-                value: Cipher.IO_FORMAT2
-            },
-            {
-                name: "Output format",
+                name: "Output",
                 type: "option",
                 value: Cipher.IO_FORMAT3
             },
         ]
     },
-    "Derive EVP key": {
+    "RC2 Encrypt": {
         module: "Ciphers",
-        description: "EVP is a password-based key derivation function used extensively in OpenSSL. In many applications of cryptography, user security is ultimately dependent on a password, and because a password usually can't be used directly as a cryptographic key, some processing is required.<br><br>A salt provides a large set of keys for any given password, and an iteration count increases the cost of producing keys from a password, thereby also increasing the difficulty of attack.<br><br>Enter your passphrase as the input and then set the relevant options to generate a key.",
+        description: "RC2 (also known as ARC2) is a symmetric-key block cipher designed by Ron Rivest in 1987. 'RC' stands for 'Rivest Cipher'.<br><br><b>Key:</b> RC2 uses a variable size key.<br><br>You can generate a password-based key using one of the KDF operations.<br><br><b>IV:</b> To run the cipher in CBC mode, the Initialization Vector should be 8 bytes long. If the IV is left blank, the cipher will run in ECB mode.<br><br><b>Padding:</b> In both CBC and ECB mode, PKCS#7 padding will be used.",
         inputType: "string",
         outputType: "string",
         args: [
+            {
+                name: "Key",
+                type: "toggleString",
+                value: "",
+                toggleValues: Cipher.IO_FORMAT1
+            },
+            {
+                name: "IV",
+                type: "toggleString",
+                value: "",
+                toggleValues: Cipher.IO_FORMAT1
+            },
+            {
+                name: "Input",
+                type: "option",
+                value: Cipher.IO_FORMAT3
+            },
+            {
+                name: "Output",
+                type: "option",
+                value: Cipher.IO_FORMAT4
+            },
+        ]
+    },
+    "Pseudo-Random Number Generator": {
+        module: "Ciphers",
+        description: "A cryptographically-secure pseudo-random number generator (PRNG).<br><br>This operation uses the browser's built-in <code>crypto.getRandomValues()</code> method if available. If this cannot be found, it falls back to a Fortuna-based PRNG algorithm.",
+        inputType: "string",
+        outputType: "string",
+        args: [
+            {
+                name: "Number of bytes",
+                type: "number",
+                value: Cipher.PRNG_BYTES
+            },
+            {
+                name: "Output as",
+                type: "option",
+                value: Cipher.PRNG_OUTPUT
+            }
+        ]
+    },
+    "Derive PBKDF2 key": {
+        module: "Ciphers",
+        description: "PBKDF2 is a password-based key derivation function. It is part of RSA Laboratories' Public-Key Cryptography Standards (PKCS) series, specifically PKCS #5 v2.0, also published as Internet Engineering Task Force's RFC 2898.<br><br>In many applications of cryptography, user security is ultimately dependent on a password, and because a password usually can't be used directly as a cryptographic key, some processing is required.<br><br>A salt provides a large set of keys for any given password, and an iteration count increases the cost of producing keys from a password, thereby also increasing the difficulty of attack.<br><br>If you leave the salt argument empty, a random salt will be generated.",
+        inputType: "string",
+        outputType: "string",
+        args: [
+            {
+                name: "Passphrase",
+                type: "toggleString",
+                value: "",
+                toggleValues: Cipher.IO_FORMAT2
+            },
             {
                 name: "Key size",
                 type: "number",
@@ -1527,19 +1608,45 @@ const OperationConfig = {
                 value: Cipher.HASHERS
             },
             {
-                name: "Salt (hex)",
-                type: "string",
-                value: ""
+                name: "Salt",
+                type: "toggleString",
+                value: "",
+                toggleValues: Cipher.IO_FORMAT1
+            },
+        ]
+    },
+    "Derive EVP key": {
+        module: "Ciphers",
+        description: "EVP is a password-based key derivation function (PBKDF) used extensively in OpenSSL. In many applications of cryptography, user security is ultimately dependent on a password, and because a password usually can't be used directly as a cryptographic key, some processing is required.<br><br>A salt provides a large set of keys for any given password, and an iteration count increases the cost of producing keys from a password, thereby also increasing the difficulty of attack.<br><br>If you leave the salt argument empty, a random salt will be generated.",
+        inputType: "string",
+        outputType: "string",
+        args: [
+            {
+                name: "Passphrase",
+                type: "toggleString",
+                value: "",
+                toggleValues: Cipher.IO_FORMAT2
             },
             {
-                name: "Input format",
-                type: "option",
-                value: Cipher.IO_FORMAT2
+                name: "Key size",
+                type: "number",
+                value: Cipher.KDF_KEY_SIZE
             },
             {
-                name: "Output format",
+                name: "Iterations",
+                type: "number",
+                value: Cipher.KDF_ITERATIONS
+            },
+            {
+                name: "Hashing function",
                 type: "option",
-                value: Cipher.IO_FORMAT3
+                value: Cipher.HASHERS
+            },
+            {
+                name: "Salt",
+                type: "toggleString",
+                value: "",
+                toggleValues: Cipher.IO_FORMAT1
             },
         ]
     },
@@ -1776,6 +1883,11 @@ const OperationConfig = {
                 name: "Cisco style",
                 type: "boolean",
                 value: MAC.CISCO_STYLE
+            },
+            {
+                name: "IPv6 interface ID",
+                type: "boolean",
+                value: MAC.IPV6_INTERFACE_ID
             }
         ]
     },
@@ -1865,9 +1977,9 @@ const OperationConfig = {
     },
     "Drop bytes": {
         module: "Default",
-        description: "Cuts the specified number of bytes out of the data.",
-        inputType: "byteArray",
-        outputType: "byteArray",
+        description: "Cuts a slice of the specified number of bytes out of the data.",
+        inputType: "ArrayBuffer",
+        outputType: "ArrayBuffer",
         args: [
             {
                 name: "Start",
@@ -1889,8 +2001,8 @@ const OperationConfig = {
     "Take bytes": {
         module: "Default",
         description: "Takes a slice of the specified number of bytes from the data.",
-        inputType: "byteArray",
-        outputType: "byteArray",
+        inputType: "ArrayBuffer",
+        outputType: "ArrayBuffer",
         args: [
             {
                 name: "Start",
@@ -2010,9 +2122,8 @@ const OperationConfig = {
         args: []
     },
     "Find / Replace": {
-        module: "Default",
+        module: "Regex",
         description: "Replaces all occurrences of the first string with the second.<br><br> Includes support for regular expressions (regex), simple strings and extended strings (which support \\n, \\r, \\t, \\b, \\f and escaped hex bytes using \\x notation, e.g. \\x00 for a null byte).",
-        manualBake: true,
         inputType: "string",
         outputType: "string",
         args: [
@@ -2020,7 +2131,7 @@ const OperationConfig = {
                 name: "Find",
                 type: "toggleString",
                 value: "",
-                toggleValues: StrUtils.SEARCH_TYPE
+                toggleValues: Regex.SEARCH_TYPE
             },
             {
                 name: "Replace",
@@ -2030,17 +2141,17 @@ const OperationConfig = {
             {
                 name: "Global match",
                 type: "boolean",
-                value: StrUtils.FIND_REPLACE_GLOBAL,
+                value: Regex.FIND_REPLACE_GLOBAL,
             },
             {
                 name: "Case insensitive",
                 type: "boolean",
-                value: StrUtils.FIND_REPLACE_CASE,
+                value: Regex.FIND_REPLACE_CASE,
             },
             {
                 name: "Multiline matching",
                 type: "boolean",
-                value: StrUtils.FIND_REPLACE_MULTILINE,
+                value: Regex.FIND_REPLACE_MULTILINE,
             },
 
         ]
@@ -2077,20 +2188,19 @@ const OperationConfig = {
         args: [
             {
                 name: "Split delimiter",
-                type: "binaryShortString",
-                value: StrUtils.SPLIT_DELIM
+                type: "editableOption",
+                value: StrUtils.SPLIT_DELIM_OPTIONS
             },
             {
                 name: "Join delimiter",
-                type: "option",
-                value: StrUtils.DELIMITER_OPTIONS
+                type: "editableOption",
+                value: StrUtils.JOIN_DELIM_OPTIONS
             }
         ]
     },
     "Filter": {
         module: "Default",
         description: "Splits up the input using the specified delimiter and then filters each branch based on a regular expression.",
-        manualBake: true,
         inputType: "string",
         outputType: "string",
         args: [
@@ -2107,20 +2217,30 @@ const OperationConfig = {
             {
                 name: "Invert condition",
                 type: "boolean",
-                value: SeqUtils.SORT_REVERSE
+                value: false
             },
         ]
     },
     "Strings": {
-        module: "Default",
+        module: "Regex",
         description: "Extracts all strings from the input.",
         inputType: "string",
         outputType: "string",
         args: [
             {
+                name: "Encoding",
+                type: "option",
+                value: Extract.ENCODING_LIST
+            },
+            {
                 name: "Minimum length",
                 type: "number",
                 value: Extract.MIN_STRING_LEN
+            },
+            {
+                name: "Match",
+                type: "option",
+                value: Extract.STRING_MATCH_TYPE
             },
             {
                 name: "Display total",
@@ -2130,7 +2250,7 @@ const OperationConfig = {
         ]
     },
     "Extract IP addresses": {
-        module: "Default",
+        module: "Regex",
         description: "Extracts all IPv4 and IPv6 addresses.<br><br>Warning: Given a string <code>710.65.0.456</code>, this will match <code>10.65.0.45</code> so always check the original input!",
         inputType: "string",
         outputType: "string",
@@ -2158,7 +2278,7 @@ const OperationConfig = {
         ]
     },
     "Extract email addresses": {
-        module: "Default",
+        module: "Regex",
         description: "Extracts all email addresses from the input.",
         inputType: "string",
         outputType: "string",
@@ -2171,7 +2291,7 @@ const OperationConfig = {
         ]
     },
     "Extract MAC addresses": {
-        module: "Default",
+        module: "Regex",
         description: "Extracts all Media Access Control (MAC) addresses from the input.",
         inputType: "string",
         outputType: "string",
@@ -2184,7 +2304,7 @@ const OperationConfig = {
         ]
     },
     "Extract URLs": {
-        module: "Default",
+        module: "Regex",
         description: "Extracts Uniform Resource Locators (URLs) from the input. The protocol (http, ftp etc.) is required otherwise there will be far too many false positives.",
         inputType: "string",
         outputType: "string",
@@ -2197,7 +2317,7 @@ const OperationConfig = {
         ]
     },
     "Extract domains": {
-        module: "Default",
+        module: "Regex",
         description: "Extracts domain names.<br>Note that this will not include paths. Use <strong>Extract URLs</strong> to find entire URLs.",
         inputType: "string",
         outputType: "string",
@@ -2210,7 +2330,7 @@ const OperationConfig = {
         ]
     },
     "Extract file paths": {
-        module: "Default",
+        module: "Regex",
         description: "Extracts anything that looks like a Windows or UNIX file path.<br><br>Note that if UNIX is selected, there will likely be a lot of false positives.",
         inputType: "string",
         outputType: "string",
@@ -2233,7 +2353,7 @@ const OperationConfig = {
         ]
     },
     "Extract dates": {
-        module: "Default",
+        module: "Regex",
         description: "Extracts dates in the following formats<ul><li><code>yyyy-mm-dd</code></li><li><code>dd/mm/yyyy</code></li><li><code>mm/dd/yyyy</code></li></ul>Dividers can be any of /, -, . or space",
         inputType: "string",
         outputType: "string",
@@ -2246,16 +2366,15 @@ const OperationConfig = {
         ]
     },
     "Regular expression": {
-        module: "Default",
-        description: "Define your own regular expression (regex) to search the input data with, optionally choosing from a list of pre-defined patterns.",
-        manualBake: true,
+        module: "Regex",
+        description: "Define your own regular expression (regex) to search the input data with, optionally choosing from a list of pre-defined patterns.<br><br>Supports extended regex syntax including the 'dot matches all' flag, named capture groups, full unicode coverage (including <code>\\p{}</code> categories and scripts as well as astral codes) and recursive matching.",
         inputType: "string",
         outputType: "html",
         args: [
             {
                 name: "Built in regexes",
                 type: "populateOption",
-                value: StrUtils.REGEX_PRE_POPULATE,
+                value: Regex.REGEX_PRE_POPULATE,
                 target: 1,
             },
             {
@@ -2266,22 +2385,37 @@ const OperationConfig = {
             {
                 name: "Case insensitive",
                 type: "boolean",
-                value: StrUtils.REGEX_CASE_INSENSITIVE
+                value: true
             },
             {
-                name: "Multiline matching",
+                name: "^ and $ match at newlines",
                 type: "boolean",
-                value: StrUtils.REGEX_MULTILINE_MATCHING
+                value: true
+            },
+            {
+                name: "Dot matches all",
+                type: "boolean",
+                value: false
+            },
+            {
+                name: "Unicode support",
+                type: "boolean",
+                value: false
+            },
+            {
+                name: "Astral support",
+                type: "boolean",
+                value: false
             },
             {
                 name: "Display total",
                 type: "boolean",
-                value: StrUtils.DISPLAY_TOTAL
+                value: Regex.DISPLAY_TOTAL
             },
             {
                 name: "Output format",
                 type: "option",
-                value: StrUtils.OUTPUT_FORMAT
+                value: Regex.OUTPUT_FORMAT
             },
         ]
     },
@@ -2356,7 +2490,7 @@ const OperationConfig = {
         module: "Default",
         description: "Parses a datetime string in UTC and returns the corresponding UNIX timestamp.<br><br>e.g. <code>Mon 1 January 2001 11:00:00</code> becomes <code>978346800</code><br><br>A UNIX timestamp is a 32-bit value representing the number of seconds since January 1, 1970 UTC (the UNIX epoch).",
         inputType: "string",
-        outputType: "number",
+        outputType: "string",
         args: [
             {
                 name: "Units",
@@ -2367,11 +2501,29 @@ const OperationConfig = {
                 name: "Treat as UTC",
                 type: "boolean",
                 value: DateTime.TREAT_AS_UTC
+            },
+            {
+                name: "Show parsed datetime",
+                type: "boolean",
+                value: true
+            }
+        ]
+    },
+    "Sleep": {
+        module: "Default",
+        description: "Sleep causes the recipe to wait for a specified number of milliseconds before continuing execution.",
+        inputType: "ArrayBuffer",
+        outputType: "ArrayBuffer",
+        args: [
+            {
+                name: "Time (ms)",
+                type: "number",
+                value: 1000
             }
         ]
     },
     "Windows Filetime to UNIX Timestamp": {
-        module: "JSBN",
+        module: "Default",
         description: "Converts a Windows Filetime value to a UNIX timestamp.<br><br>A Windows Filetime is a 64-bit value representing the number of 100-nanosecond intervals since January 1, 1601 UTC.<br><br>A UNIX timestamp is a 32-bit value representing the number of seconds since January 1, 1970 UTC (the UNIX epoch).<br><br>This operation also supports UNIX timestamps in milliseconds, microseconds and nanoseconds.",
         inputType: "string",
         outputType: "string",
@@ -2389,7 +2541,7 @@ const OperationConfig = {
         ]
     },
     "UNIX Timestamp to Windows Filetime": {
-        module: "JSBN",
+        module: "Default",
         description: "Converts a UNIX timestamp to a Windows Filetime value.<br><br>A Windows Filetime is a 64-bit value representing the number of 100-nanosecond intervals since January 1, 1601 UTC.<br><br>A UNIX timestamp is a 32-bit value representing the number of seconds since January 1, 1970 UTC (the UNIX epoch).<br><br>This operation also supports UNIX timestamps in milliseconds, microseconds and nanoseconds.",
         inputType: "string",
         outputType: "string",
@@ -2467,8 +2619,8 @@ const OperationConfig = {
     "Convert distance": {
         module: "Default",
         description: "Converts a unit of distance to another format.",
-        inputType: "number",
-        outputType: "number",
+        inputType: "BigNumber",
+        outputType: "BigNumber",
         args: [
             {
                 name: "Input units",
@@ -2485,8 +2637,8 @@ const OperationConfig = {
     "Convert area": {
         module: "Default",
         description: "Converts a unit of area to another format.",
-        inputType: "number",
-        outputType: "number",
+        inputType: "BigNumber",
+        outputType: "BigNumber",
         args: [
             {
                 name: "Input units",
@@ -2503,8 +2655,8 @@ const OperationConfig = {
     "Convert mass": {
         module: "Default",
         description: "Converts a unit of mass to another format.",
-        inputType: "number",
-        outputType: "number",
+        inputType: "BigNumber",
+        outputType: "BigNumber",
         args: [
             {
                 name: "Input units",
@@ -2521,8 +2673,8 @@ const OperationConfig = {
     "Convert speed": {
         module: "Default",
         description: "Converts a unit of speed to another format.",
-        inputType: "number",
-        outputType: "number",
+        inputType: "BigNumber",
+        outputType: "BigNumber",
         args: [
             {
                 name: "Input units",
@@ -2539,8 +2691,8 @@ const OperationConfig = {
     "Convert data units": {
         module: "Default",
         description: "Converts a unit of data to another format.",
-        inputType: "number",
-        outputType: "number",
+        inputType: "BigNumber",
+        outputType: "BigNumber",
         args: [
             {
                 name: "Input units",
@@ -2921,21 +3073,21 @@ const OperationConfig = {
     "MD2": {
         module: "Hashing",
         description: "The MD2 (Message-Digest 2) algorithm is a cryptographic hash function developed by Ronald Rivest in 1989. The algorithm is optimized for 8-bit computers.<br><br>Although MD2 is no longer considered secure, even as of 2014, it remains in use in public key infrastructures as part of certificates generated with MD2 and RSA.",
-        inputType: "string",
+        inputType: "ArrayBuffer",
         outputType: "string",
         args: []
     },
     "MD4": {
         module: "Hashing",
         description: "The MD4 (Message-Digest 4) algorithm is a cryptographic hash function developed by Ronald Rivest in 1990. The digest length is 128 bits. The algorithm has influenced later designs, such as the MD5, SHA-1 and RIPEMD algorithms.<br><br>The security of MD4 has been severely compromised.",
-        inputType: "string",
+        inputType: "ArrayBuffer",
         outputType: "string",
         args: []
     },
     "MD5": {
         module: "Hashing",
         description: "MD5 (Message-Digest 5) is a widely used hash function. It has been used in a variety of security applications and is also commonly used to check the integrity of files.<br><br>However, MD5 is not collision resistant and it isn't suitable for applications like SSL/TLS certificates or digital signatures that rely on this property.",
-        inputType: "string",
+        inputType: "ArrayBuffer",
         outputType: "string",
         args: []
     },
@@ -2965,21 +3117,21 @@ const OperationConfig = {
     "SHA0": {
         module: "Hashing",
         description: "SHA-0 is a retronym applied to the original version of the 160-bit hash function published in 1993 under the name 'SHA'. It was withdrawn shortly after publication due to an undisclosed 'significant flaw' and replaced by the slightly revised version SHA-1.",
-        inputType: "string",
+        inputType: "ArrayBuffer",
         outputType: "string",
         args: []
     },
     "SHA1": {
         module: "Hashing",
         description: "The SHA (Secure Hash Algorithm) hash functions were designed by the NSA. SHA-1 is the most established of the existing SHA hash functions and it is used in a variety of security applications and protocols.<br><br>However, SHA-1's collision resistance has been weakening as new attacks are discovered or improved.",
-        inputType: "string",
+        inputType: "ArrayBuffer",
         outputType: "string",
         args: []
     },
     "SHA2": {
         module: "Hashing",
         description: "The SHA-2 (Secure Hash Algorithm 2) hash functions were designed by the NSA. SHA-2 includes significant changes from its predecessor, SHA-1. The SHA-2 family consists of hash functions with digests (hash values) that are 224, 256, 384 or 512 bits: SHA224, SHA256, SHA384, SHA512.<br><br><ul><li>SHA-512 operates on 64-bit words.</li><li>SHA-256 operates on 32-bit words.</li><li>SHA-384 is largely identical to SHA-512 but is truncated to 384 bytes.</li><li>SHA-224 is largely identical to SHA-256 but is truncated to 224 bytes.</li><li>SHA-512/224 and SHA-512/256 are truncated versions of SHA-512, but the initial values are generated using the method described in Federal Information Processing Standards (FIPS) PUB 180-4.</li></ul>",
-        inputType: "string",
+        inputType: "ArrayBuffer",
         outputType: "string",
         args: [
             {
@@ -2992,7 +3144,7 @@ const OperationConfig = {
     "SHA3": {
         module: "Hashing",
         description: "The SHA-3 (Secure Hash Algorithm 3) hash functions were released by NIST on August 5, 2015. Although part of the same series of standards, SHA-3 is internally quite different from the MD5-like structure of SHA-1 and SHA-2.<br><br>SHA-3 is a subset of the broader cryptographic primitive family Keccak designed by Guido Bertoni, Joan Daemen, Michaël Peeters, and Gilles Van Assche, building upon RadioGatún.",
-        inputType: "string",
+        inputType: "ArrayBuffer",
         outputType: "string",
         args: [
             {
@@ -3005,7 +3157,7 @@ const OperationConfig = {
     "Keccak": {
         module: "Hashing",
         description: "The Keccak hash algorithm was designed by Guido Bertoni, Joan Daemen, Michaël Peeters, and Gilles Van Assche, building upon RadioGatún. It was selected as the winner of the SHA-3 design competition.<br><br>This version of the algorithm is Keccak[c=2d] and differs from the SHA-3 specification.",
-        inputType: "string",
+        inputType: "ArrayBuffer",
         outputType: "string",
         args: [
             {
@@ -3018,7 +3170,7 @@ const OperationConfig = {
     "Shake": {
         module: "Hashing",
         description: "Shake is an Extendable Output Function (XOF) of the SHA-3 hash algorithm, part of the Keccak family, allowing for variable output length/size.",
-        inputType: "string",
+        inputType: "ArrayBuffer",
         outputType: "string",
         args: [
             {
@@ -3037,7 +3189,7 @@ const OperationConfig = {
     "RIPEMD": {
         module: "Hashing",
         description: "RIPEMD (RACE Integrity Primitives Evaluation Message Digest) is a family of cryptographic hash functions developed in Leuven, Belgium, by Hans Dobbertin, Antoon Bosselaers and Bart Preneel at the COSIC research group at the Katholieke Universiteit Leuven, and first published in 1996.<br><br>RIPEMD was based upon the design principles used in MD4, and is similar in performance to the more popular SHA-1.<br><br>",
-        inputType: "string",
+        inputType: "ArrayBuffer",
         outputType: "string",
         args: [
             {
@@ -3050,14 +3202,14 @@ const OperationConfig = {
     "HAS-160": {
         module: "Hashing",
         description: "HAS-160 is a cryptographic hash function designed for use with the Korean KCDSA digital signature algorithm. It is derived from SHA-1, with assorted changes intended to increase its security. It produces a 160-bit output.<br><br>HAS-160 is used in the same way as SHA-1. First it divides input in blocks of 512 bits each and pads the final block. A digest function updates the intermediate hash value by processing the input blocks in turn.<br><br>The message digest algorithm consists of 80 rounds.",
-        inputType: "string",
+        inputType: "ArrayBuffer",
         outputType: "string",
         args: []
     },
     "Whirlpool": {
         module: "Hashing",
         description: "Whirlpool is a cryptographic hash function designed by Vincent Rijmen (co-creator of AES) and Paulo S. L. M. Barreto, who first described it in 2000.<br><br>Several variants exist:<ul><li>Whirlpool-0 is the original version released in 2000.</li><li>Whirlpool-T is the first revision, released in 2001, improving the generation of the s-box.</li><li>Wirlpool is the latest revision, released in 2003, fixing a flaw in the difusion matrix.</li></ul>",
-        inputType: "string",
+        inputType: "ArrayBuffer",
         outputType: "string",
         args: [
             {
@@ -3070,7 +3222,7 @@ const OperationConfig = {
     "Snefru": {
         module: "Hashing",
         description: "Snefru is a cryptographic hash function invented by Ralph Merkle in 1990 while working at Xerox PARC. The function supports 128-bit and 256-bit output. It was named after the Egyptian Pharaoh Sneferu, continuing the tradition of the Khufu and Khafre block ciphers.<br><br>The original design of Snefru was shown to be insecure by Eli Biham and Adi Shamir who were able to use differential cryptanalysis to find hash collisions. The design was then modified by increasing the number of iterations of the main pass of the algorithm from two to eight.",
-        inputType: "string",
+        inputType: "ArrayBuffer",
         outputType: "string",
         args: [
             {
@@ -3085,14 +3237,54 @@ const OperationConfig = {
             }
         ]
     },
+    "SSDEEP": {
+        module: "Hashing",
+        description: "SSDEEP is a program for computing context triggered piecewise hashes (CTPH). Also called fuzzy hashes, CTPH can match inputs that have homologies. Such inputs have sequences of identical bytes in the same order, although bytes in between these sequences may be different in both content and length.<br><br>SSDEEP hashes are now widely used for simple identification purposes (e.g. the 'Basic Properties' section in VirusTotal). Although 'better' fuzzy hashes are available, SSDEEP is still one of the primary choices because of its speed and being a de facto standard.<br><br>This operation is fundamentally the same as the CTPH operation, however their outputs differ in format.",
+        inputType: "string",
+        outputType: "string",
+        args: []
+    },
+    "CTPH": {
+        module: "Hashing",
+        description: "Context Triggered Piecewise Hashing, also called Fuzzy Hashing, can match inputs that have homologies. Such inputs have sequences of identical bytes in the same order, although bytes in between these sequences may be different in both content and length.<br><br>CTPH was originally based on the work of Dr. Andrew Tridgell and a spam email detector called SpamSum. This method was adapted by Jesse Kornblum and published at the DFRWS conference in 2006 in a paper 'Identifying Almost Identical Files Using Context Triggered Piecewise Hashing'.",
+        inputType: "string",
+        outputType: "string",
+        args: []
+    },
+    "Compare SSDEEP hashes": {
+        module: "Hashing",
+        description: "Compares two SSDEEP fuzzy hashes to determine the similarity between them on a scale of 0 to 100.",
+        inputType: "string",
+        outputType: "Number",
+        args: [
+            {
+                name: "Delimiter",
+                type: "option",
+                value: Hash.DELIM_OPTIONS
+            }
+        ]
+    },
+    "Compare CTPH hashes": {
+        module: "Hashing",
+        description: "Compares two Context Triggered Piecewise Hashing (CTPH) fuzzy hashes to determine the similarity between them on a scale of 0 to 100.",
+        inputType: "string",
+        outputType: "Number",
+        args: [
+            {
+                name: "Delimiter",
+                type: "option",
+                value: Hash.DELIM_OPTIONS
+            }
+        ]
+    },
     "HMAC": {
         module: "Hashing",
         description: "Keyed-Hash Message Authentication Codes (HMAC) are a mechanism for message authentication using cryptographic hash functions.",
-        inputType: "string",
+        inputType: "ArrayBuffer",
         outputType: "string",
         args: [
             {
-                name: "Password",
+                name: "Key",
                 type: "binaryString",
                 value: ""
             },
@@ -3141,21 +3333,21 @@ const OperationConfig = {
     "CRC-32 Checksum": {
         module: "Hashing",
         description: "A cyclic redundancy check (CRC) is an error-detecting code commonly used in digital networks and storage devices to detect accidental changes to raw data.<br><br>The CRC was invented by W. Wesley Peterson in 1961; the 32-bit CRC function of Ethernet and many other standards is the work of several researchers and was published in 1975.",
-        inputType: "string",
+        inputType: "ArrayBuffer",
         outputType: "string",
         args: []
     },
     "CRC-16 Checksum": {
         module: "Hashing",
         description: "A cyclic redundancy check (CRC) is an error-detecting code commonly used in digital networks and storage devices to detect accidental changes to raw data.<br><br>The CRC was invented by W. Wesley Peterson in 1961.",
-        inputType: "string",
+        inputType: "ArrayBuffer",
         outputType: "string",
         args: []
     },
     "Generate all hashes": {
         module: "Hashing",
         description: "Generates all available hashes and checksums for the input.",
-        inputType: "string",
+        inputType: "ArrayBuffer",
         outputType: "string",
         args: []
     },
@@ -3175,7 +3367,7 @@ const OperationConfig = {
     "Frequency distribution": {
         module: "Default",
         description: "Displays the distribution of bytes in the data as a graph.",
-        inputType: "byteArray",
+        inputType: "ArrayBuffer",
         outputType: "html",
         args: [
             {
@@ -3184,6 +3376,13 @@ const OperationConfig = {
                 value: Entropy.FREQ_ZEROS
             }
         ]
+    },
+    "Chi Square": {
+        module: "Default",
+        description: "Calculates the Chi Square distribution of values.",
+        inputType: "ArrayBuffer",
+        outputType: "number",
+        args: []
     },
     "Numberwang": {
         module: "Default",
@@ -3194,7 +3393,7 @@ const OperationConfig = {
     },
     "Parse X.509 certificate": {
         module: "PublicKey",
-        description: "X.509 is an ITU-T standard for a public key infrastructure (PKI) and Privilege Management Infrastructure (PMI). It is commonly involved with SSL/TLS security.<br><br>This operation displays the contents of a certificate in a human readable format, similar to the openssl command line tool.",
+        description: "X.509 is an ITU-T standard for a public key infrastructure (PKI) and Privilege Management Infrastructure (PMI). It is commonly involved with SSL/TLS security.<br><br>This operation displays the contents of a certificate in a human readable format, similar to the openssl command line tool.<br><br>Tags: X509, server hello, handshake",
         inputType: "string",
         outputType: "string",
         args: [
@@ -3260,14 +3459,14 @@ const OperationConfig = {
     "Detect File Type": {
         module: "Default",
         description: "Attempts to guess the MIME (Multipurpose Internet Mail Extensions) type of the data based on 'magic bytes'.<br><br>Currently supports the following file types: 7z, amr, avi, bmp, bz2, class, cr2, crx, dex, dmg, doc, elf, eot, epub, exe, flac, flv, gif, gz, ico, iso, jpg, jxr, m4a, m4v, mid, mkv, mov, mp3, mp4, mpg, ogg, otf, pdf, png, ppt, ps, psd, rar, rtf, sqlite, swf, tar, tar.z, tif, ttf, utf8, vmdk, wav, webm, webp, wmv, woff, woff2, xls, xz, zip.",
-        inputType: "byteArray",
+        inputType: "ArrayBuffer",
         outputType: "string",
         args: []
     },
     "Scan for Embedded Files": {
         module: "Default",
         description: "Scans the data for potential embedded files by looking for magic bytes at all offsets. This operation is prone to false positives.<br><br>WARNING: Files over about 100KB in size will take a VERY long time to process.",
-        inputType: "byteArray",
+        inputType: "ArrayBuffer",
         outputType: "string",
         args: [
             {
@@ -3371,15 +3570,10 @@ const OperationConfig = {
         outputType: "html",
         args: [
             {
-                name: "Language/File extension",
+                name: "Language",
                 type: "option",
                 value: Code.LANGUAGES
             },
-            {
-                name: "Display line numbers",
-                type: "boolean",
-                value: Code.LINE_NUMS
-            }
         ]
     },
     "TCP/IP Checksum": {
@@ -3423,14 +3617,40 @@ const OperationConfig = {
     },
     "Escape string": {
         module: "Default",
-        description: "Escapes special characters in a string so that they do not cause conflicts. For example, <code>Don't stop me now</code> becomes <code>Don\\'t stop me now</code>.",
+        description: "Escapes special characters in a string so that they do not cause conflicts. For example, <code>Don't stop me now</code> becomes <code>Don\\'t stop me now</code>.<br><br>Supports the following escape sequences:<ul><li><code>\\n</code> (Line feed/newline)</li><li><code>\\r</code> (Carriage return)</li><li><code>\\t</code> (Horizontal tab)</li><li><code>\\b</code> (Backspace)</li><li><code>\\f</code> (Form feed)</li><li><code>\\xnn</code> (Hex, where n is 0-f)</li><li><code>\\\\</code> (Backslash)</li><li><code>\\'</code> (Single quote)</li><li><code>\\&quot;</code> (Double quote)</li><li><code>\\unnnn</code> (Unicode character)</li><li><code>\\u{nnnnnn}</code> (Unicode code point)</li></ul>",
         inputType: "string",
         outputType: "string",
-        args: []
+        args: [
+            {
+                name: "Escape level",
+                type: "option",
+                value: StrUtils.ESCAPE_LEVEL
+            },
+            {
+                name: "Escape quote",
+                type: "option",
+                value: StrUtils.QUOTE_TYPES
+            },
+            {
+                name: "JSON compatible",
+                type: "boolean",
+                value: false
+            },
+            {
+                name: "ES6 compatible",
+                type: "boolean",
+                value: true
+            },
+            {
+                name: "Uppercase hex",
+                type: "boolean",
+                value: false
+            }
+        ]
     },
     "Unescape string": {
         module: "Default",
-        description: "Unescapes characters in a string that have been escaped. For example, <code>Don\\'t stop me now</code> becomes <code>Don't stop me now</code>.",
+        description: "Unescapes characters in a string that have been escaped. For example, <code>Don\\'t stop me now</code> becomes <code>Don't stop me now</code>.<br><br>Supports the following escape sequences:<ul><li><code>\\n</code> (Line feed/newline)</li><li><code>\\r</code> (Carriage return)</li><li><code>\\t</code> (Horizontal tab)</li><li><code>\\b</code> (Backspace)</li><li><code>\\f</code> (Form feed)</li><li><code>\\xnn</code> (Hex, where n is 0-f)</li><li><code>\\\\</code> (Backslash)</li><li><code>\\'</code> (Single quote)</li><li><code>\\&quot;</code> (Double quote)</li><li><code>\\unnnn</code> (Unicode character)</li><li><code>\\u{nnnnnn}</code> (Unicode code point)</li></ul>",
         inputType: "string",
         outputType: "string",
         args: []
@@ -3621,7 +3841,7 @@ const OperationConfig = {
             "<br><br>",
             "EXIF data from photos usually contains information about the image file itself as well as the device used to create it.",
         ].join("\n"),
-        inputType: "byteArray",
+        inputType: "ArrayBuffer",
         outputType: "string",
         args: [],
     },
@@ -3695,7 +3915,7 @@ const OperationConfig = {
         module: "Default",
         description: "Binary-Coded Decimal (BCD) is a class of binary encodings of decimal numbers where each decimal digit is represented by a fixed number of bits, usually four or eight. Special bit patterns are sometimes used for a sign.",
         inputType: "string",
-        outputType: "number",
+        outputType: "BigNumber",
         args: [
             {
                 name: "Scheme",
@@ -3723,7 +3943,7 @@ const OperationConfig = {
     "To BCD": {
         module: "Default",
         description: "Binary-Coded Decimal (BCD) is a class of binary encodings of decimal numbers where each decimal digit is represented by a fixed number of bits, usually four or eight. Special bit patterns are sometimes used for a sign",
-        inputType: "number",
+        inputType: "BigNumber",
         outputType: "string",
         args: [
             {
@@ -3820,7 +4040,7 @@ const OperationConfig = {
     "Generate HOTP": {
         module: "Default",
         description: "The HMAC-based One-Time Password algorithm (HOTP) is an algorithm that computes a one-time password from a shared secret key and an incrementing counter. It has been adopted as Internet Engineering Task Force standard RFC 4226, is the cornerstone of Initiative For Open Authentication (OATH), and is used in a number of two-factor authentication systems.<br><br>Enter the secret as the input or leave it blank for a random secret to be generated.",
-        inputType: "string",
+        inputType: "byteArray",
         outputType: "string",
         args: [
             {
@@ -3843,6 +4063,274 @@ const OperationConfig = {
                 type: "number",
                 value: 0
             }
+        ]
+    },
+    "PHP Deserialize": {
+        module: "Default",
+        description: "Deserializes PHP serialized data, outputting keyed arrays as JSON.<br><br>This function does not support <code>object</code> tags.<br><br>Example:<br><code>a:2:{s:1:&quot;a&quot;;i:10;i:0;a:1:{s:2:&quot;ab&quot;;b:1;}}</code><br>becomes<br><code>{&quot;a&quot;: 10,0: {&quot;ab&quot;: true}}</code><br><br><u>Output valid JSON:</u> JSON doesn't support integers as keys, whereas PHP serialization does. Enabling this will cast these integers to strings. This will also escape backslashes.",
+        inputType: "string",
+        outputType: "string",
+        args: [
+            {
+                name: "Output valid JSON",
+                type: "boolean",
+                value: PHP.OUTPUT_VALID_JSON
+            }
+        ]
+    },
+    "Hamming Distance": {
+        module: "Default",
+        description: "In information theory, the Hamming distance between two strings of equal length is the number of positions at which the corresponding symbols are different. In other words, it measures the minimum number of substitutions required to change one string into the other, or the minimum number of errors that could have transformed one string into the other. In a more general context, the Hamming distance is one of several string metrics for measuring the edit distance between two sequences.",
+        inputType: "string",
+        outputType: "string",
+        args: [
+            {
+                name: "Delimiter",
+                type: "binaryShortString",
+                value: StrUtils.HAMMING_DELIM
+            },
+            {
+                name: "Unit",
+                type: "option",
+                value: StrUtils.HAMMING_UNIT
+            },
+            {
+                name: "Input type",
+                type: "option",
+                value: StrUtils.HAMMING_INPUT_TYPE
+            }
+        ]
+    },
+    "XKCD Random Number": {
+        module: "Default",
+        description: "RFC 1149.5 specifies 4 as the standard IEEE-vetted random number.<br><br><a href='https://xkcd.com/221/'>XKCD #221</a>",
+        inputType: "string",
+        outputType: "number",
+        args: []
+    },
+    "Bcrypt": {
+        module: "Hashing",
+        description: "bcrypt is a password hashing function designed by Niels Provos and David Mazières, based on the Blowfish cipher, and presented at USENIX in 1999. Besides incorporating a salt to protect against rainbow table attacks, bcrypt is an adaptive function: over time, the iteration count (rounds) can be increased to make it slower, so it remains resistant to brute-force search attacks even with increasing computation power.<br><br>Enter the password in the input to generate its hash.",
+        inputType: "string",
+        outputType: "string",
+        args: [
+            {
+                name: "Rounds",
+                type: "number",
+                value: Hash.BCRYPT_ROUNDS
+            }
+        ]
+    },
+    "Bcrypt compare": {
+        module: "Hashing",
+        description: "Tests whether the input matches the given bcrypt hash. To test multiple possible passwords, use the 'Fork' operation.",
+        inputType: "string",
+        outputType: "string",
+        args: [
+            {
+                name: "Hash",
+                type: "string",
+                value: ""
+            }
+        ]
+    },
+    "Bcrypt parse": {
+        module: "Hashing",
+        description: "Parses a bcrypt hash to determine the number of rounds used, the salt, and the password hash.",
+        inputType: "string",
+        outputType: "string",
+        args: []
+    },
+    "Scrypt": {
+        module: "Hashing",
+        description: "scrypt is a password-based key derivation function (PBKDF) created by Colin Percival. The algorithm was specifically designed to make it costly to perform large-scale custom hardware attacks by requiring large amounts of memory. In 2016, the scrypt algorithm was published by IETF as RFC 7914.<br><br>Enter the password in the input to generate its hash.",
+        inputType: "string",
+        outputType: "string",
+        args: [
+            {
+                name: "Salt",
+                type: "toggleString",
+                value: "",
+                toggleValues: Hash.KEY_FORMAT
+            },
+            {
+                name: "Iterations (N)",
+                type: "number",
+                value: Hash.SCRYPT_ITERATIONS
+            },
+            {
+                name: "Memory factor (r)",
+                type: "number",
+                value: Hash.SCRYPT_MEM_FACTOR
+            },
+            {
+                name: "Parallelization factor (p)",
+                type: "number",
+                value: Hash.SCRYPT_PARALLEL_FACTOR
+            },
+            {
+                name: "Key length",
+                type: "number",
+                value: Hash.SCRYPT_KEY_LENGTH
+            },
+        ]
+    },
+    "BSON serialise": {
+        module: "BSON",
+        description: "BSON is a computer data interchange format used mainly as a data storage and network transfer format in the MongoDB database. It is a binary form for representing simple data structures, associative arrays (called objects or documents in MongoDB), and various data types of specific interest to MongoDB. The name 'BSON' is based on the term JSON and stands for 'Binary JSON'.<br><br>Input data should be valid JSON.",
+        inputType: "string",
+        outputType: "ArrayBuffer",
+        args: []
+    },
+    "BSON deserialise": {
+        module: "BSON",
+        description: "BSON is a computer data interchange format used mainly as a data storage and network transfer format in the MongoDB database. It is a binary form for representing simple data structures, associative arrays (called objects or documents in MongoDB), and various data types of specific interest to MongoDB. The name 'BSON' is based on the term JSON and stands for 'Binary JSON'.<br><br>Input data should be in a raw bytes format.",
+        inputType: "ArrayBuffer",
+        outputType: "string",
+        args: []
+    },
+    "Generate PGP Key Pair": {
+        module: "PGP",
+        description: "Generates a new public/private PGP key pair. Supports RSA and Eliptic Curve (EC) keys.",
+        inputType: "string",
+        outputType: "string",
+        args: [
+            {
+                name: "Key type",
+                type: "option",
+                value: PGP.KEY_TYPES
+            },
+            {
+                name: "Password (optional)",
+                type: "string",
+                value: ""
+            },
+            {
+                name: "Name (optional)",
+                type: "string",
+                value: ""
+            },
+            {
+                name: "Email (optional)",
+                type: "string",
+                value: ""
+            },
+        ]
+    },
+    "PGP Encrypt": {
+        module: "PGP",
+        description: [
+            "Input: the message you want to encrypt.",
+            "<br><br>",
+            "Arguments: the ASCII-armoured PGP public key of the recipient.",
+            "<br><br>",
+            "Pretty Good Privacy is an encryption standard (OpenPGP) used for encrypting, decrypting, and signing messages.",
+            "<br><br>",
+            "This function uses the Keybase implementation of PGP.",
+        ].join("\n"),
+        inputType: "string",
+        outputType: "string",
+        args: [
+            {
+                name: "Public key of recipient",
+                type: "text",
+                value: ""
+            },
+        ]
+    },
+    "PGP Decrypt": {
+        module: "PGP",
+        description: [
+            "Input: the ASCII-armoured PGP message you want to decrypt.",
+            "<br><br>",
+            "Arguments: the ASCII-armoured PGP private key of the recipient, ",
+            "(and the private key password if necessary).",
+            "<br><br>",
+            "Pretty Good Privacy is an encryption standard (OpenPGP) used for encrypting, decrypting, and signing messages.",
+            "<br><br>",
+            "This function uses the Keybase implementation of PGP.",
+        ].join("\n"),
+        inputType: "string",
+        outputType: "string",
+        args: [
+            {
+                name: "Private key of recipient",
+                type: "text",
+                value: ""
+            },
+            {
+                name: "Private key passphrase",
+                type: "string",
+                value: ""
+            },
+        ]
+    },
+    "PGP Encrypt and Sign": {
+        module: "PGP",
+        description: [
+            "Input: the cleartext you want to sign.",
+            "<br><br>",
+            "Arguments: the ASCII-armoured private key of the signer (plus the private key password if necessary)",
+            "and the ASCII-armoured PGP public key of the recipient.",
+            "<br><br>",
+            "This operation uses PGP to produce an encrypted digital signature.",
+            "<br><br>",
+            "Pretty Good Privacy is an encryption standard (OpenPGP) used for encrypting, decrypting, and signing messages.",
+            "<br><br>",
+            "This function uses the Keybase implementation of PGP.",
+        ].join("\n"),
+        inputType: "string",
+        outputType: "string",
+        args: [
+            {
+                name: "Private key of signer",
+                type: "text",
+                value: ""
+            },
+            {
+                name: "Private key passphrase",
+                type: "string",
+                value: ""
+            },
+            {
+                name: "Public key of recipient",
+                type: "text",
+                value: ""
+            },
+        ]
+    },
+    "PGP Decrypt and Verify": {
+        module: "PGP",
+        description: [
+            "Input: the ASCII-armoured encrypted PGP message you want to verify.",
+            "<br><br>",
+            "Arguments: the ASCII-armoured PGP public key of the signer, ",
+            "the ASCII-armoured private key of the recipient (and the private key password if necessary).",
+            "<br><br>",
+            "This operation uses PGP to decrypt and verify an encrypted digital signature.",
+            "<br><br>",
+            "Pretty Good Privacy is an encryption standard (OpenPGP) used for encrypting, decrypting, and signing messages.",
+            "<br><br>",
+            "This function uses the Keybase implementation of PGP.",
+        ].join("\n"),
+        inputType: "string",
+        outputType: "string",
+        args: [
+            {
+                name: "Public key of signer",
+                type: "text",
+                value: "",
+            },
+            {
+                name: "Private key of recipient",
+                type: "text",
+                value: "",
+            },
+            {
+                name: "Private key password",
+                type: "string",
+                value: "",
+            },
         ]
     },
 };

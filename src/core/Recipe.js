@@ -141,23 +141,31 @@ Recipe.prototype.lastOpIndex = function(startIndex) {
  *
  * @param {Dish} dish
  * @param {number} [startFrom=0] - The index of the Operation to start executing from
+ * @param {number} [forkState={}] - If this is a forked recipe, the state of the recipe up to this point
  * @returns {number} - The final progress through the recipe
  */
-Recipe.prototype.execute = async function(dish, startFrom) {
-    startFrom = startFrom || 0;
-    let op, input, output, numJumps = 0, numRegisters = 0;
+Recipe.prototype.execute = async function(dish, startFrom = 0, forkState = {}) {
+    let op, input, output,
+        numJumps = 0,
+        numRegisters = forkState.numRegisters || 0;
+
+    log.debug(`[*] Executing recipe of ${this.opList.length} operations, starting at ${startFrom}`);
 
     for (let i = startFrom; i < this.opList.length; i++) {
         op = this.opList[i];
+        log.debug(`[${i}] ${op.name} ${JSON.stringify(op.getIngValues())}`);
         if (op.isDisabled()) {
+            log.debug("Operation is disabled, skipping");
             continue;
         }
         if (op.isBreakpoint()) {
+            log.debug("Pausing at breakpoint");
             return i;
         }
 
         try {
             input = dish.get(op.inputType);
+            log.debug("Executing operation");
 
             if (op.isFlowControl()) {
                 // Package up the current state
@@ -166,7 +174,8 @@ Recipe.prototype.execute = async function(dish, startFrom) {
                     "dish":         dish,
                     "opList":       this.opList,
                     "numJumps":     numJumps,
-                    "numRegisters": numRegisters
+                    "numRegisters": numRegisters,
+                    "forkOffset":   forkState.forkOffset || 0
                 };
 
                 state = await op.run(state);
@@ -193,6 +202,7 @@ Recipe.prototype.execute = async function(dish, startFrom) {
         }
     }
 
+    log.debug("Recipe complete");
     return this.opList.length;
 };
 
@@ -249,5 +259,6 @@ Recipe.prototype.generateHighlightList = function() {
 
     return highlights;
 };
+
 
 export default Recipe;
